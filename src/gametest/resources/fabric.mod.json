@@ -1,0 +1,13 @@
+{
+	"schemaVersion": 1,
+	"id": "medieval-test",
+	"version": "1.0.0",
+	"name": "Stasdoto Medieval - automated test",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": ["com.stasdoto.medieval.test.MedievalClientGameTest"]
+	},
+	"depends": {
+		"medieval": "*"
+	}
+}

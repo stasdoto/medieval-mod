@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "medieval",
+	"version": "${version}",
+	"name": "Stasdoto Medieval",
+	"description": "Настоящая Земля 1:1 и цивилизация 1000–1100 годов: сёла, города, замки, хозяйство, торговля и войны.",
+	"authors": ["Stasdoto"],
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["com.stasdoto.medieval.Medieval"],
+		"client": ["com.stasdoto.medieval.client.MedievalClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
