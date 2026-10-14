@@ -2,7 +2,6 @@ package com.stasdoto.medieval.earth;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.LongFunction;
 
@@ -14,7 +13,7 @@ public final class TileCache<T> {
 	private final int capacity;
 	private final LongFunction<T> loader;
 	private final LinkedHashMap<Long, T> lru;
-	private final ConcurrentHashMap<Long, CompletableFuture<T>> loading = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Long, Pending<T>> loading = new ConcurrentHashMap<>();
 	private final ThreadLocal<long[]> localKeys = ThreadLocal.withInitial(() -> new long[]{Long.MIN_VALUE, Long.MIN_VALUE, Long.MIN_VALUE, Long.MIN_VALUE});
 	private final ThreadLocal<Object[]> localVals = ThreadLocal.withInitial(() -> new Object[4]);
 	private volatile int generation;
@@ -65,24 +64,55 @@ public final class TileCache<T> {
 				return v;
 			}
 		}
-		CompletableFuture<T> mine = new CompletableFuture<>();
-		CompletableFuture<T> f = loading.putIfAbsent(key, mine);
+		Pending<T> mine = new Pending<>();
+		Pending<T> f = loading.putIfAbsent(key, mine);
 		if (f == null) {
 			try {
 				T v = loader.apply(key);
 				synchronized (lru) {
 					lru.put(key, v);
 				}
-				mine.complete(v);
+				mine.done(v, null);
 				return v;
 			} catch (RuntimeException e) {
-				mine.completeExceptionally(e);
+				mine.done(null, e);
 				throw e;
 			} finally {
 				loading.remove(key);
 			}
 		}
-		return f.join();
+		if (f.owner == Thread.currentThread()) {
+			// The same thread asks again while loading it (should not happen): load it once more instead of waiting forever.
+			return loader.apply(key);
+		}
+		return f.await();
+	}
+
+	/** A tile being loaded by one thread; others wait for it with a plain latch (never by running other tasks). */
+	private static final class Pending<T> {
+		final Thread owner = Thread.currentThread();
+		final java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+		volatile T value;
+		volatile RuntimeException error;
+
+		void done(T v, RuntimeException e) {
+			value = v;
+			error = e;
+			latch.countDown();
+		}
+
+		T await() {
+			try {
+				latch.await();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException(e);
+			}
+			if (error != null) {
+				throw error;
+			}
+			return value;
+		}
 	}
 
 	/** Forgets everything (e.g. when a world is closed). */

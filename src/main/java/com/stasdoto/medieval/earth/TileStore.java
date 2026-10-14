@@ -59,7 +59,47 @@ public final class TileStore {
 	 * The tile's bytes, an empty array when the server has no such tile, or null when it could not be fetched (offline, or
 	 * the server kept failing).
 	 */
+	/**
+	 * Downloads run on their own threads: waiting for the network inside a world-generation worker would let that worker
+	 * pick up other chunk tasks meanwhile (work stealing), which can end up waiting for the very tile it is fetching.
+	 */
+	private static final java.util.concurrent.ExecutorService NET = java.util.concurrent.Executors.newFixedThreadPool(PARALLEL, r -> {
+		Thread t = new Thread(r, "medieval-download");
+		t.setDaemon(true);
+		return t;
+	});
+
 	public byte[] get(int z, int x, int y) {
+		Path f = file(z, x, y);
+		try {
+			if (Files.exists(f)) {
+				return Files.readAllBytes(f);
+			}
+			if (Files.exists(Path.of(f + ".none"))) {
+				return NONE;
+			}
+		} catch (IOException e) {
+			EarthLog.warn.accept("cannot read " + f + ": " + e);
+		}
+		if (!online || urlTemplate == null) {
+			return null;
+		}
+		java.util.concurrent.FutureTask<byte[]> task = new java.util.concurrent.FutureTask<>(() -> fetch(z, x, y));
+		NET.execute(task);
+		try {
+			// FutureTask.get parks the thread plainly (no work stealing).
+			return task.get(150, java.util.concurrent.TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return null;
+		} catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+			EarthLog.warn.accept(name + " tile " + z + "/" + x + "/" + y + ": " + e);
+			FAILED.incrementAndGet();
+			return null;
+		}
+	}
+
+	private byte[] fetch(int z, int x, int y) {
 		Path f = file(z, x, y);
 		try {
 			if (Files.exists(f)) {
