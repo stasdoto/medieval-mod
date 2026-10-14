@@ -35,6 +35,8 @@ public class PersonEntity extends PathfinderMob {
 	private static final EntityDataAccessor<Boolean> DATA_FEMALE = SynchedEntityData.defineId(PersonEntity.class, EntityDataSerializers.BOOLEAN);
 
 	public BlockPos home = BlockPos.ZERO;
+	/** The player this warrior serves (follows and fights for), or null. */
+	public java.util.UUID lord;
 	public String settlement = "";
 	public String name = "";
 
@@ -47,7 +49,8 @@ public class PersonEntity extends PathfinderMob {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 20).add(Attributes.MOVEMENT_SPEED, 0.28).add(Attributes.FOLLOW_RANGE, 32);
+		return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 20).add(Attributes.MOVEMENT_SPEED, 0.28).add(Attributes.FOLLOW_RANGE, 32)
+				.add(Attributes.ATTACK_DAMAGE, 3);
 	}
 
 	@Override
@@ -93,8 +96,13 @@ public class PersonEntity extends PathfinderMob {
 	@Override
 	protected void registerGoals() {
 		goalSelector.addGoal(0, new FloatGoal(this));
+		goalSelector.addGoal(1, new WarGoals.Fight(this));
 		goalSelector.addGoal(1, new OpenDoorGoal(this, true));
-		goalSelector.addGoal(2, new DayGoal(this));
+		goalSelector.addGoal(2, new WarGoals.FollowLord(this));
+		goalSelector.addGoal(3, new DayGoal(this));
+		targetSelector.addGoal(1, new WarGoals.DefendLord(this));
+		targetSelector.addGoal(2, new WarGoals.Retaliate(this));
+		targetSelector.addGoal(3, new WarGoals.HuntMonsters(this));
 		goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.55));
 		goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8f));
 		goalSelector.addGoal(7, new RandomLookAroundGoal(this));
@@ -140,6 +148,9 @@ public class PersonEntity extends PathfinderMob {
 		output.store("home", BlockPos.CODEC, home);
 		output.putString("settlement", settlement);
 		output.putString("name", name);
+		if (lord != null) {
+			output.store("lord", net.minecraft.core.UUIDUtil.CODEC, lord);
+		}
 	}
 
 	@Override
@@ -152,6 +163,7 @@ public class PersonEntity extends PathfinderMob {
 		home = input.read("home", BlockPos.CODEC).orElse(BlockPos.ZERO);
 		settlement = input.getStringOr("settlement", "");
 		name = input.getStringOr("name", "");
+		lord = input.read("lord", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
 	}
 
 	@Override

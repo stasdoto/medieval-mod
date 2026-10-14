@@ -43,6 +43,7 @@ public class Medieval implements ModInitializer {
 		com.stasdoto.medieval.people.People.init();
 		com.stasdoto.medieval.build.SettlementFeature.init();
 		MedievalCommands.init();
+		com.stasdoto.medieval.realm.TownCommands.init();
 		LOGGER.info("Stasdoto Medieval loaded");
 	}
 

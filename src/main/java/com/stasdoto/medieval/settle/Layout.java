@@ -57,6 +57,11 @@ public final class Layout {
 		DIRT, GRAVEL, LOGS, COBBLE, SAND, PLANKS
 	}
 
+	/** A plot added later (a building the lord ordered). */
+	public static Lot newLot(int x0, int z0, int x1, int z1, int rot, int floor, BKind kind, long seed) {
+		return new Lot(x0, z0, x1, z1, rot, floor, kind, seed);
+	}
+
 	/** A street or track: points x,z every few blocks. */
 	public static final class Road {
 		public final int[] pts;

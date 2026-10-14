@@ -69,6 +69,7 @@ public final class MedievalCommands {
 							return Places.ALL.size();
 						}))
 						.then(Commands.literal("where").executes(ctx -> where(ctx.getSource())))
+						.then(com.stasdoto.medieval.realm.TownCommands.node())
 						.then(Commands.literal("offline")
 								.then(Commands.literal("on").executes(ctx -> offline(ctx.getSource(), true)))
 								.then(Commands.literal("off").executes(ctx -> offline(ctx.getSource(), false))))));
