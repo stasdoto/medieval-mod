@@ -41,6 +41,63 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 					{"fjord", 62.1080, 7.0500, 60.0, 62.1000, 7.2000, 1100},
 					{"giza", 29.9900, 31.1000, 80.0, 30.0000, 31.2300, 900},
 			};
+			// Settlements: find the nearest one of the wanted kind around a point and look at it from above its edge.
+			Object[][] towns = {
+					{"kyiv_city", 50.4535, 30.5143, "CITY"},
+					{"rus_village", 51.40, 31.10, "VILLAGE"},
+					{"latin_village", 49.30, 0.80, "VILLAGE"},
+					{"norse_village", 59.35, 10.20, "VILLAGE"},
+					{"cordoba_city", 37.8790, -4.7800, "CITY"},
+					{"steppe_camp", 47.6, 35.2, "CAMP"},
+			};
+			for (Object[] tw : towns) {
+				String name = (String) tw[0];
+				if (!scene(name)) {
+					continue;
+				}
+				long t0 = System.currentTimeMillis();
+				int px = (int) Math.round(Projection.x((double) tw[2])), pz = (int) Math.round(Projection.z((double) tw[1]));
+				com.stasdoto.medieval.settle.Site best = null;
+				double bd = Double.MAX_VALUE;
+				boolean wantCity = "CITY".equals(tw[3]);
+				for (int i = -2; i <= 2; i++) {
+					for (int j = -2; j <= 2; j++) {
+						for (com.stasdoto.medieval.settle.Site st : com.stasdoto.medieval.settle.Sites.cell(Math.floorDiv(px, 4096) + i, Math.floorDiv(pz, 4096) + j)) {
+							boolean ok = wantCity ? st.kind.urban() : "CAMP".equals(tw[3]) ? st.kind == com.stasdoto.medieval.settle.Site.Kind.CAMP
+									: st.kind == com.stasdoto.medieval.settle.Site.Kind.VILLAGE || st.kind == com.stasdoto.medieval.settle.Site.Kind.BIG_VILLAGE;
+							double d = Math.hypot(st.x - px, st.z - pz);
+							if (ok && d < bd) {
+								bd = d;
+								best = st;
+							}
+						}
+					}
+				}
+				if (best == null) {
+					Medieval.LOGGER.info("RESULT {}: no settlement found", name);
+					continue;
+				}
+				com.stasdoto.medieval.settle.Layout lay = com.stasdoto.medieval.settle.Planner.layout(best);
+				double back = Math.max(40, Math.min(170, best.radius * 0.55));
+				double camX = best.x + back * 0.7, camZ = best.z + back;
+				Terrain.Col cc = Terrain.column((int) camX, (int) camZ);
+				double camY = Math.max(cc.ground, lay.centerY) + back * 0.55 + 12;
+				double dx = best.x - camX, dz = best.z - camZ;
+				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+				float pitch = (float) Math.toDegrees(Math.atan2(camY - lay.centerY, Math.hypot(dx, dz)));
+				Medieval.LOGGER.info("RESULT {}: {} - {} plots, {} streets, {} walls", name, best, lay.lots.size(), lay.roads.size(), lay.walls.size());
+				server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a %.1f %.1f %.1f %.1f %.1f",
+						MedievalCommands.EARTH.identifier(), camX, camY, camZ, yaw, pitch));
+				ctx.waitTicks(1100);
+				ctx.takeScreenshot(name);
+				// A second look from the ground in the middle.
+				Terrain.Col mid = Terrain.column(best.x + 6, best.z + 9);
+				server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a %.1f %.1f %.1f %.1f %.1f",
+						MedievalCommands.EARTH.identifier(), best.x + 6.5, (double) Math.max(mid.top(), lay.centerY) + 3, best.z + 9.5, 160f, 5f));
+				ctx.waitTicks(300);
+				ctx.takeScreenshot(name + "_street");
+				Medieval.LOGGER.info("RESULT {} done in {} s", name, (System.currentTimeMillis() - t0) / 1000);
+			}
 			for (Object[] s : scenes) {
 				String name = (String) s[0];
 				if (!scene(name)) {

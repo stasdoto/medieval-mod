@@ -28,10 +28,24 @@ public final class BiomePick {
 			Biomes.WARM_OCEAN, Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.OCEAN, Biomes.DEEP_OCEAN,
 			Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_FROZEN_OCEAN};
 
+	/** Is the place inside a settlement or its fields (no forest there, apart from the woods that stand today). */
+	public static boolean settled(int x, int z) {
+		for (com.stasdoto.medieval.settle.Site s : com.stasdoto.medieval.settle.Sites.near(x, z)) {
+			double d = Math.hypot(x - s.x, z - s.z);
+			if (d < s.fieldRadius() * 1.05) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** Is a place forest in 1050: today's woods, plus a share of today's fields and towns. */
 	public static boolean wooded(Terrain.Col c, int x, int z) {
 		if (c.cover == Cover.WOOD) {
 			return true;
+		}
+		if (settled(x, z)) {
+			return false;
 		}
 		if (c.cover == Cover.FARMLAND || c.cover == Cover.MODERN || c.cover == Cover.NONE || c.cover == Cover.SCRUB) {
 			if (c.zone == Climate.STEPPE || c.zone == Climate.DESERT || c.zone == Climate.COLD_DESERT || c.zone == Climate.TUNDRA

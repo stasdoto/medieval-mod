@@ -83,7 +83,66 @@ public class EarthPreview {
 					img.setRGB(i, j, rgb);
 				}
 			}
+			// Settlements over the map: plots by kind, streets, walls, the edge of the fields.
+			int nSites = 0, nLots = 0;
+			java.util.Set<Long> seen = new java.util.HashSet<>();
+			for (int j = 0; j < pixels; j += Math.max(1, pixels / 12)) {
+				for (int i = 0; i < pixels; i += Math.max(1, pixels / 12)) {
+					int x = cx + (int) ((i - pixels / 2) * step), z = cz + (int) ((j - pixels / 2) * step);
+					for (com.stasdoto.medieval.settle.Site st : com.stasdoto.medieval.settle.Sites.near(x, z)) {
+						if (!seen.add(st.id)) {
+							continue;
+						}
+						nSites++;
+						com.stasdoto.medieval.settle.Layout lay = com.stasdoto.medieval.settle.Planner.layout(st);
+						nLots += lay.lots.size();
+						System.out.println("  SITE " + st + " lots " + lay.lots.size() + " roads " + lay.roads.size() + " walls " + lay.walls.size()
+								+ " fields " + lay.fieldInner + ".." + lay.fieldOuter);
+						java.util.function.BiConsumer<double[], Integer> dot = (pt, rgb) -> {
+							int pi = (int) Math.round((pt[0] - cx) / step + pixels / 2.0), pj = (int) Math.round((pt[1] - cz) / step + pixels / 2.0);
+							if (pi >= 0 && pj >= 0 && pi < pixels && pj < pixels) {
+								img.setRGB(pi, pj, rgb);
+							}
+						};
+						for (int k = 0; k < 360; k++) {
+							double an = Math.toRadians(k);
+							dot.accept(new double[]{st.x + Math.cos(an) * lay.fieldOuter, st.z + Math.sin(an) * lay.fieldOuter}, 0xE8C547);
+						}
+						for (com.stasdoto.medieval.settle.Layout.Road rd : lay.roads) {
+							for (int k = 0; k + 3 < rd.pts.length; k += 2) {
+								double len = Math.hypot(rd.pts[k + 2] - rd.pts[k], rd.pts[k + 3] - rd.pts[k + 1]);
+								for (double f = 0; f <= len; f += step * 0.5) {
+									dot.accept(new double[]{rd.pts[k] + (rd.pts[k + 2] - rd.pts[k]) * f / Math.max(1e-6, len),
+											rd.pts[k + 1] + (rd.pts[k + 3] - rd.pts[k + 1]) * f / Math.max(1e-6, len)}, 0x8A6A3A);
+								}
+							}
+						}
+						for (com.stasdoto.medieval.settle.Layout.Wall w : lay.walls) {
+							for (int k = 0; k < 720; k++) {
+								double an = Math.toRadians(k / 2.0);
+								double rr = w.radiusAt(an);
+								dot.accept(new double[]{w.cx + Math.cos(an) * rr, w.cz + Math.sin(an) * rr}, w.gateAt(an) ? 0xFFFFFF : 0x202020);
+							}
+						}
+						for (com.stasdoto.medieval.settle.Layout.Lot lot : lay.lots) {
+							int rgb = switch (lot.kind) {
+								case CHURCH, CHURCH_SMALL, CATHEDRAL, MOSQUE -> 0xF5E663;
+								case HALL, KEEP -> 0xD02020;
+								case HOMESTEAD -> 0x7A4A2A;
+								case STALL, WELL -> 0x2060D0;
+								default -> 0xA0522D;
+							};
+							for (double xx = lot.x0; xx <= lot.x1; xx += Math.max(1, step * 0.7)) {
+								for (double zz = lot.z0; zz <= lot.z1; zz += Math.max(1, step * 0.7)) {
+									dot.accept(new double[]{xx, zz}, rgb);
+								}
+							}
+						}
+					}
+				}
+			}
 			ImageIO.write(img, "png", out.resolve(name + ".png").toFile());
+			System.out.println("RESULT " + name + " settlements " + nSites + ", plots " + nLots);
 			Terrain.Col mid = cols[(pixels / 2) * pixels + pixels / 2];
 			System.out.printf("RESULT %s: %d blocks across, ground y %.0f..%.0f, water %.1f%%, centre y %.1f (%.0f m) cover %s zone %d temp %.1f, %d ms, tiles downloaded %d failed %d%n",
 					name, size, minY, maxY, 100.0 * water / cols.length, mid.ground, mid.meters, Cover.name(mid.cover), mid.zone, mid.temp,
