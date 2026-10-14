@@ -605,6 +605,16 @@ public final class TownCommands {
 			Economy.advance(t, today);
 			Long lastRaidCheck = RAID_DAY.put(t.id, today);
 			if (lastRaidCheck != null && lastRaidCheck < today) {
+				// Trade with the neighbours (the settlements already known within ~40 km).
+				for (Town o : ts.towns.values()) {
+					if (o != t && Math.hypot(o.x - t.x, o.z - t.z) < 40000) {
+						Economy.advance(o, today);
+						String note = Economy.trade(t, o);
+						if (note != null) {
+							t.log(note);
+						}
+					}
+				}
 				ServerPlayer lord = server.getPlayerList().getPlayer(java.util.UUID.fromString(t.owner));
 				Raids.daily(earth, t, lord, new java.util.Random(t.id * 7 + today));
 			}

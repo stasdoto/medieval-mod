@@ -211,6 +211,49 @@ public final class Economy {
 		return s;
 	}
 
+	/** How much of a good a settlement wants to keep. */
+	public static double want(Town t, Res r) {
+		return switch (r) {
+			case FOOD -> t.population * 15.0;
+			case WOOD -> t.population * 2.0;
+			case WEAPONS, ARMOR -> t.jobs.get(Job.WARRIORS) * 2.0 + 5;
+			case HORSES -> t.population * 0.05 + 2;
+			default -> t.population * 0.3 + 5;
+		};
+	}
+
+	/**
+	 * A day of trade between two settlements: their merchants carry what one has too much of to the other, which lacks
+	 * it, and are paid at the buyer's price. Returns a line for the chronicle, or null.
+	 */
+	public static String trade(Town a, Town b) {
+		int merchants = a.jobs.get(Job.MERCHANTS) + b.jobs.get(Job.MERCHANTS) + 2;
+		String note = null;
+		for (Res r : Res.values()) {
+			for (int dir = 0; dir < 2; dir++) {
+				Town from = dir == 0 ? a : b, to = dir == 0 ? b : a;
+				double extra = from.get(r) - want(from, r) * 1.3;
+				double lack = want(to, r) * 0.7 - to.get(r);
+				if (extra <= 0 || lack <= 0) {
+					continue;
+				}
+				double amount = Math.min(Math.min(extra, lack), merchants * (r == Res.FOOD || r == Res.WOOD ? 20 : 3));
+				double pay = amount * price(to, r);
+				if (to.treasury < pay * 0.5) {
+					continue;
+				}
+				from.add(r, -amount);
+				to.add(r, amount);
+				to.treasury -= pay * 0.5;
+				from.treasury += pay * 0.5;
+				if (note == null && amount >= 5) {
+					note = "купцы из " + from.name + " привезли в " + to.name + ": " + r.title + " (" + Math.round(amount) + ")";
+				}
+			}
+		}
+		return note;
+	}
+
 	/** The local price of a good (in silver), dearer when scarce. */
 	public static double price(Town t, Res r) {
 		double want = switch (r) {
