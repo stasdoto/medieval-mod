@@ -28,11 +28,22 @@ jobs:
           if echo "$MSG" | grep -q '\[test'; then echo "gametest=true" >> $GITHUB_OUTPUT; fi
           SC=$(echo "$MSG" | grep -o '\[test:[^]]*\]' | head -1 | sed 's/^\[test://;s/\]$//')
           echo "scenes=$SC" >> $GITHUB_OUTPUT
+          if echo "$MSG" | grep -q '\[preview\]'; then echo "preview=true" >> $GITHUB_OUTPUT; fi
           if echo "$MSG" | grep -q '\[probe\]'; then echo "probe=$(tr '\n' ' ' < .github/probe.txt)" >> $GITHUB_OUTPUT; fi
       - name: build
         id: build
         continue-on-error: true
         run: ./gradlew build compileGametestJava --stacktrace --warning-mode=none 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
+      - name: preview maps
+        if: ${{ steps.opt.outputs.preview == 'true' }}
+        continue-on-error: true
+        run: |
+          mkdir -p /tmp/out/preview /tmp/pv
+          javac -cp build/classes/java/main -d /tmp/pv tools/preview/EarthPreview.java
+          timeout 40m java -cp build/classes/java/main:src/main/resources:/tmp/pv EarthPreview /tmp/cache /tmp/out/preview \
+            kyiv:50.4501:30.5234:12000:1200 kyiv_close:50.4560:30.5500:3000:1000 dnieper_rapids:48.05:35.15:20000:1000 \
+            alps:45.9766:7.6586:16000:1000 venice:45.43:12.33:12000:1000 constantinople:41.02:28.98:14000:1200 \
+            fjord:62.105:7.15:14000:1000 nile:30.0:31.2:20000:1000 2>&1 | tee /tmp/out/preview-log.txt
       - name: probe signatures
         if: ${{ steps.opt.outputs.probe != '' }}
         env:
@@ -133,6 +144,7 @@ jobs:
           echo "${{ github.sha }} ${{ steps.build.outcome }}" > /tmp/out/STATUS
           # Separate result branches, so a probe or a plain build never overwrites in-game test results.
           BR=ci-out
+          if [ "${{ steps.opt.outputs.preview }}" = "true" ]; then BR=ci-preview; fi
           if [ -n "${{ steps.opt.outputs.probe }}" ]; then BR=ci-probe; elif [ "${{ steps.opt.outputs.gametest }}" = "true" ]; then BR=ci-test; fi
           cd /tmp/out
           git init -q -b "$BR"

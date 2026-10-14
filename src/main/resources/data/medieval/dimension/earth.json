@@ -1,0 +1,9 @@
+{
+  "type": "medieval:earth",
+  "generator": {
+    "type": "medieval:earth",
+    "biome_source": {
+      "type": "medieval:earth"
+    }
+  }
+}
