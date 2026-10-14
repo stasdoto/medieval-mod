@@ -400,7 +400,7 @@ public record SettlementFeature() implements Feature {
 			}
 			Terrain.Col c = col(x, z);
 			int y = Math.max(c.top(), lot.floor) + 1;
-			com.stasdoto.medieval.people.People.populate(level, l.site, lot.kind, new BlockPos(x, y, z), lot.seed);
+			com.stasdoto.medieval.people.People.populate(level, l.site, lot.kind, new BlockPos(x, y, z), lot.seed, l);
 		}
 
 		/** Levels the ground of a plot to its floor and blends the edges into the land around. */

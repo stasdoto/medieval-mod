@@ -35,6 +35,8 @@ public class PersonEntity extends PathfinderMob {
 	private static final EntityDataAccessor<Boolean> DATA_FEMALE = SynchedEntityData.defineId(PersonEntity.class, EntityDataSerializers.BOOLEAN);
 
 	public BlockPos home = BlockPos.ZERO;
+	/** Where he works by day (a field, the smithy, the market, the church, the wall), or ZERO. */
+	public BlockPos work = BlockPos.ZERO;
 	/** The player this warrior serves (follows and fights for), or null. */
 	public java.util.UUID lord;
 	/** A raider: the lord (player id) whose land he raids, and the settlement he is after (empty when not a raider). */
@@ -157,6 +159,7 @@ public class PersonEntity extends PathfinderMob {
 		output.putInt("role", entityData.get(DATA_ROLE));
 		output.putBoolean("female", female());
 		output.store("home", BlockPos.CODEC, home);
+		output.store("work", BlockPos.CODEC, work);
 		output.putString("settlement", settlement);
 		output.putString("name", name);
 		if (lord != null) {
@@ -175,6 +178,7 @@ public class PersonEntity extends PathfinderMob {
 		entityData.set(DATA_ROLE, input.getIntOr("role", 0));
 		entityData.set(DATA_FEMALE, input.getBooleanOr("female", false));
 		home = input.read("home", BlockPos.CODEC).orElse(BlockPos.ZERO);
+		work = input.read("work", BlockPos.CODEC).orElse(BlockPos.ZERO);
 		settlement = input.getStringOr("settlement", "");
 		name = input.getStringOr("name", "");
 		lord = input.read("lord", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
