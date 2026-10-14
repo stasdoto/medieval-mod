@@ -54,7 +54,12 @@ public final class Terrain {
 		double lon = Projection.lon(x + 0.5);
 		c.lat = lat;
 		c.lon = lon;
-		double m = Dem.meters(lat, lon);
+		double raw = Dem.meters(lat, lon);
+		double m = raw;
+		// Below sea level only under the sea or in the few real depressions; elsewhere it is a hole in the data.
+		if (m < -2 && !lowland(lat, lon)) {
+			m = -2;
+		}
 		c.meters = m;
 		double gx = Projection.mercX(lon, OsmTile.ZOOM) / 256.0;
 		double gy = Projection.mercY(lat, OsmTile.ZOOM) / 256.0;
@@ -84,7 +89,7 @@ public final class Terrain {
 			c.cover = t.cover[cj * OsmTile.C + ci];
 		} else {
 			// No map: the sea is where the ground is below sea level.
-			s = m < -0.5 ? 10 : -10;
+			s = raw < -0.5 ? 10 : -10;
 			sea = s > 0;
 			c.cover = Cover.NONE;
 		}
@@ -114,7 +119,7 @@ public final class Terrain {
 			double depthBlocks;
 			if (sea) {
 				// Near the shore the depth grows with the distance; further out it follows the charted sea floor.
-				double bathy = m < 0 ? (wTop + 1) - Projection.y(m) : 0;
+				double bathy = raw < 0 ? (wTop + 1) - Projection.y(raw) : 0;
 				double wgt = Math.min(1, distM / 190.0);
 				wgt = wgt * wgt * (3 - 2 * wgt);
 				depthBlocks = Math.max(1 + distM * 0.05, bathy * wgt);
@@ -147,6 +152,16 @@ public final class Terrain {
 			}
 		}
 		c.ground = Math.max(Projection.MIN_Y + 4, Math.min(Projection.MAX_Y - 4, ground));
+	}
+
+	/** Places that really lie below sea level: the Caspian, the Dead Sea and the Jordan, Qattara, Danakil, Turpan, the Low Countries. */
+	static boolean lowland(double lat, double lon) {
+		return lat > 36 && lat < 48 && lon > 45 && lon < 56 // Caspian
+				|| lat > 29.5 && lat < 33.5 && lon > 34.8 && lon < 36 // Dead Sea, Jordan
+				|| lat > 28.5 && lat < 30.6 && lon > 25.5 && lon < 29.5 // Qattara
+				|| lat > 12 && lat < 15 && lon > 39.5 && lon < 42 // Danakil
+				|| lat > 42.3 && lat < 43.3 && lon > 88.5 && lon < 90.5 // Turpan
+				|| lat > 51 && lat < 53.7 && lon > 3 && lon < 7.3; // Low Countries
 	}
 
 	private static int clamp(int p) {

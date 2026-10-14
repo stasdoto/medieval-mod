@@ -27,7 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 
-import com.stasdoto.medieval.build.SettlementFeature;
+import com.stasdoto.medieval.construct.SettlementFeature;
 import com.stasdoto.medieval.command.MedievalCommands;
 import com.stasdoto.medieval.earth.Terrain;
 import com.stasdoto.medieval.history.Culture;

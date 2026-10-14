@@ -296,7 +296,7 @@ public final class Planner {
 						k = BKind.HOUSE_RICH;
 					}
 					double nx = -tz * side, nz = tx * side;
-					double off = rd.width / 2.0 + 1.5 + k.d / 2.0;
+					double off = rd.width / 2.0 + 3.5 + k.d / 2.0;
 					int rot = facing(-nx, -nz);
 					place(k, (int) Math.round(px + nx * off), (int) Math.round(pz + nz * off), rot);
 				}

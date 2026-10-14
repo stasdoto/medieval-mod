@@ -34,7 +34,7 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 			server.runCommand("gamemode spectator @a");
 			// name, camera lat, lon, height above ground, target lat, lon, wait ticks
 			Object[][] scenes = {
-					{"kyiv", 50.4560, 30.5300, 45.0, 50.4560, 30.6000, 900},
+					{"kyiv", 50.4560, 30.5480, 90.0, 50.4560, 30.6000, 900},
 					{"matterhorn", 45.9950, 7.7050, 120.0, 45.9766, 7.6586, 1300},
 					{"constantinople", 41.0300, 28.9750, 70.0, 41.0086, 28.9802, 1000},
 					{"venice", 45.4500, 12.3600, 160.0, 45.4340, 12.3390, 900},
@@ -96,6 +96,26 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 						MedievalCommands.EARTH.identifier(), best.x + 6.5, (double) Math.max(mid.top(), lay.centerY) + 3, best.z + 9.5, 160f, 5f));
 				ctx.waitTicks(300);
 				ctx.takeScreenshot(name + "_street");
+				if ("rus_village".equals(name) && scene("rule")) {
+					// Become the lord (creative: free), look at the card, raise warriors and look at them.
+					server.runCommand("gamemode creative @a");
+					server.runCommand("execute as @p run medieval town charter");
+					server.runCommand("execute as @p run medieval town recruit 6");
+					server.runCommand("execute as @p run medieval town build homestead");
+					server.runCommand("execute as @p run medieval town market");
+					ctx.waitTicks(80);
+					ctx.takeScreenshot("rule_card");
+					server.runCommand("gamemode spectator @a");
+					server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a ~ ~3 ~ 160 35", MedievalCommands.EARTH.identifier()));
+					ctx.waitTicks(60);
+					ctx.takeScreenshot("rule_warriors");
+					int people = server.computeOnServer(sv -> {
+						var lvl = sv.getLevel(MedievalCommands.EARTH);
+						var pl = sv.getPlayerList().getPlayers().get(0);
+						return lvl.getEntitiesOfClass(com.stasdoto.medieval.people.PersonEntity.class, pl.getBoundingBox().inflate(200)).size();
+					});
+					Medieval.LOGGER.info("RESULT rule: people around {}", people);
+				}
 				Medieval.LOGGER.info("RESULT {} done in {} s", name, (System.currentTimeMillis() - t0) / 1000);
 			}
 			for (Object[] s : scenes) {
@@ -115,7 +135,7 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
 				double dist = Math.hypot(dx, dz);
 				float pitch = (float) Math.toDegrees(Math.atan2(camY - tc.ground, dist));
-				pitch = Math.max(-10, Math.min(60, pitch));
+				pitch = Math.max(14, Math.min(60, pitch));
 				Medieval.LOGGER.info("RESULT {}: block {} {} (lat {} lon {}), ground y {} ({} m), water top {}, cover {}, zone {}, {} °C; target {} m away, ground y {}",
 						name, x, z, String.format("%.4f", lat), String.format("%.4f", lon), ground, Math.round(c.meters), c.waterTop,
 						Cover.name(c.cover), c.zone, String.format("%.1f", c.temp), Math.round(dist), Math.round(tc.ground));

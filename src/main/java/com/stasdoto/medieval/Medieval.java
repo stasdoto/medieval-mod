@@ -41,7 +41,7 @@ public class Medieval implements ModInitializer {
 		Registry.register(BuiltInRegistries.CHUNK_GENERATOR, id("earth"), EarthChunkGenerator.CODEC);
 		Registry.register(BuiltInRegistries.BIOME_SOURCE, id("earth"), EarthBiomeSource.CODEC);
 		com.stasdoto.medieval.people.People.init();
-		com.stasdoto.medieval.build.SettlementFeature.init();
+		com.stasdoto.medieval.construct.SettlementFeature.init();
 		MedievalCommands.init();
 		com.stasdoto.medieval.realm.TownCommands.init();
 		LOGGER.info("Stasdoto Medieval loaded");
