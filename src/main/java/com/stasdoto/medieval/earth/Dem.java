@@ -55,7 +55,10 @@ public final class Dem {
 		gy = Math.max(0, Math.min(size - 1, gy));
 		char[] t = CACHE.get(TileCache.key(ZOOM, gx >> 8, gy >> 8));
 		if (t != FLAT && t.length > 0) {
-			return t[(gy & 255) * 256 + (gx & 255)] * 0.5 - OFFSET;
+			char v = t[(gy & 255) * 256 + (gx & 255)];
+			if (v != 0) {
+				return v * 0.5 - OFFSET;
+			}
 		}
 		// The detailed tile is missing: look at coarser zooms.
 		for (int k = 1; k <= 8; k++) {
@@ -63,7 +66,10 @@ public final class Dem {
 			int sx = gx >> k, sy = gy >> k;
 			char[] p = CACHE.get(TileCache.key(z, sx >> 8, sy >> 8));
 			if (p != FLAT && p.length > 0) {
-				return p[(sy & 255) * 256 + (sx & 255)] * 0.5 - OFFSET;
+				char v = p[(sy & 255) * 256 + (sx & 255)];
+				if (v != 0) {
+					return v * 0.5 - OFFSET;
+				}
 			}
 		}
 		return 0;
@@ -90,7 +96,8 @@ public final class Dem {
 			for (int i = 0; i < out.length; i++) {
 				int c = png.rgb[i];
 				double m = ((c >> 16 & 0xFF) * 256 + (c >> 8 & 0xFF) + (c & 0xFF) / 256.0) - 32768.0;
-				out[i] = (char) Math.max(0, Math.min(65535, Math.round((m + OFFSET) * 2.0)));
+				// 0 marks a hole in the data (it is then filled from a coarser zoom).
+				out[i] = m < -11500 ? 0 : (char) Math.max(1, Math.min(65535, Math.round((m + OFFSET) * 2.0)));
 			}
 			return out;
 		} catch (IOException | RuntimeException e) {

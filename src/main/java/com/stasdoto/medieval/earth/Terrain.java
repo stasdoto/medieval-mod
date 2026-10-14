@@ -37,6 +37,8 @@ public final class Terrain {
 	/** Water levels of one map square: 32×32 cells of 16×16 grid pixels, metres (NaN = no water near). */
 	private static final class Levels {
 		final float[] level = new float[32 * 32];
+		/** Cells where the water is wide (a river or lake, not a brook): those use the smoothed level. */
+		final boolean[] wide = new boolean[32 * 32];
 	}
 
 	private static final TileCache<Levels> LEVELS = new TileCache<>(200, Terrain::levels);
@@ -89,9 +91,23 @@ public final class Terrain {
 		c.shore = s * pxBlocks;
 
 		if (s > 0) {
-			double level = sea ? 0 : levelAt(t, tx, ty, fx, fy);
-			if (Double.isNaN(level)) {
-				level = m;
+			double level;
+			if (sea) {
+				level = 0;
+			} else if (wideAt(t, tx, ty, fx, fy)) {
+				level = levelAt(t, tx, ty, fx, fy);
+				if (Double.isNaN(level)) {
+					level = m;
+				}
+			} else {
+				// A brook: it runs in the bottom of its own little valley.
+				double lo = m;
+				double d = 3 * Projection.metersPerBlock;
+				lo = Math.min(lo, Dem.meters(Projection.lat(z + 0.5 + d), lon));
+				lo = Math.min(lo, Dem.meters(Projection.lat(z + 0.5 - d), lon));
+				lo = Math.min(lo, Dem.meters(lat, Projection.lon(x + 0.5 + d)));
+				lo = Math.min(lo, Dem.meters(lat, Projection.lon(x + 0.5 - d)));
+				level = lo - 0.7;
 			}
 			int wTop = (int) Math.round(Projection.y(level)) - 1;
 			double distM = s * pxMeters;
@@ -116,7 +132,7 @@ public final class Terrain {
 			if (ground > wTop - 0.5) {
 				ground = wTop - 0.5;
 			}
-		} else if (t.valid && t.anyWater && s > -6) {
+		} else if (t.valid && t.anyWater && s > -6 && wideAt(t, tx, ty, fx, fy)) {
 			// Banks: never lower than the water next to them (or it would spill), and gently sloping down to it.
 			double level = levelAt(t, tx, ty, fx, fy);
 			if (!Double.isNaN(level)) {
@@ -147,6 +163,12 @@ public final class Terrain {
 		y0 = clamp(y0);
 		double a = t.sdf[y0 * OsmTile.N + x0], b = t.sdf[y0 * OsmTile.N + x1], c = t.sdf[y1 * OsmTile.N + x0], d = t.sdf[y1 * OsmTile.N + x1];
 		return ((a + (b - a) * ax) * (1 - ay) + (c + (d - c) * ax) * ay) / 2.0;
+	}
+
+	private static boolean wideAt(OsmTile t, int tx, int ty, double fx, double fy) {
+		Levels l = LEVELS.get(TileCache.key(OsmTile.ZOOM, tx, ty));
+		int cx = Math.max(0, Math.min(31, (int) (fx / 16))), cy = Math.max(0, Math.min(31, (int) (fy / 16)));
+		return l.wide[cy * 32 + cx];
 	}
 
 	private static double levelAt(OsmTile t, int tx, int ty, double fx, double fy) {
@@ -196,6 +218,13 @@ public final class Terrain {
 			for (int cx = 0; cx < 32; cx++) {
 				int n = 0;
 				boolean sea = false;
+				int maxSdf = 0;
+				for (int j = 0; j < 16; j++) {
+					for (int i = 0; i < 16; i++) {
+						maxSdf = Math.max(maxSdf, t.sdf[(cy * 16 + j) * OsmTile.N + cx * 16 + i]);
+					}
+				}
+				boolean wideCell = maxSdf >= 8;
 				for (int j = 1; j < 16; j += 2) {
 					for (int i = 1; i < 16; i += 2) {
 						int px = cx * 16 + i, py = cy * 16 + j;
@@ -213,6 +242,7 @@ public final class Terrain {
 						}
 					}
 				}
+				l.wide[cy * 32 + cx] = wideCell || sea;
 				if (n > 0) {
 					java.util.Arrays.sort(vals, 0, n);
 					raw[cy * 32 + cx] = (float) vals[Math.min(n - 1, n / 4)];
@@ -221,7 +251,22 @@ public final class Terrain {
 				}
 			}
 		}
-		// Lowest of the neighbours (2 cells around) for the water cells.
+		// A cell next to wide water counts as wide too (the shallow edge of a lake belongs to the lake).
+		boolean[] wide = l.wide.clone();
+		for (int cy = 0; cy < 32; cy++) {
+			for (int cx = 0; cx < 32; cx++) {
+				for (int j = -1; j <= 1 && !l.wide[cy * 32 + cx]; j++) {
+					for (int i = -1; i <= 1; i++) {
+						int x = cx + i, y = cy + j;
+						if (x >= 0 && y >= 0 && x < 32 && y < 32 && wide[y * 32 + x]) {
+							l.wide[cy * 32 + cx] = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		// Lowest of the neighbours for the water cells.
 		for (int cy = 0; cy < 32; cy++) {
 			for (int cx = 0; cx < 32; cx++) {
 				float v = raw[cy * 32 + cx];
@@ -229,8 +274,8 @@ public final class Terrain {
 					continue;
 				}
 				float mn = v;
-				for (int j = -2; j <= 2; j++) {
-					for (int i = -2; i <= 2; i++) {
+				for (int j = -1; j <= 1; j++) {
+					for (int i = -1; i <= 1; i++) {
 						int x = cx + i, y = cy + j;
 						if (x < 0 || y < 0 || x > 31 || y > 31) {
 							continue;

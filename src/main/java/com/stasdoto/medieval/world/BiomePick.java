@@ -38,10 +38,8 @@ public final class BiomePick {
 					|| c.zone == Climate.POLAR) {
 				return false;
 			}
+			// Today's towns, roads and fields all count the same, so that no trace of modern streets shows in the woods.
 			double share = c.zone == Climate.BOREAL ? 0.55 : c.zone == Climate.MEDITERRANEAN ? 0.3 : 0.45;
-			if (c.cover == Cover.NONE) {
-				share += 0.1;
-			}
 			double n = Noise.fbm(x / 900.0, z / 900.0, 77, 3) * 0.5 + 0.5;
 			return n < share;
 		}

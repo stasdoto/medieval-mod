@@ -155,7 +155,7 @@ public final class OsmTile {
 					continue;
 				}
 				String c = f.str("class");
-				if ("swimming_pool".equals(c)) {
+				if ("swimming_pool".equals(c) || "dock".equals(c)) {
 					continue;
 				}
 				Object inter = f.tags.get("intermittent");

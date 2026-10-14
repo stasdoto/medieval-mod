@@ -66,7 +66,6 @@ public class EarthChunkGenerator extends ChunkGenerator {
 	private static final BlockState TUFF = Blocks.TUFF.defaultBlockState();
 	private static final BlockState CALCITE = Blocks.CALCITE.defaultBlockState();
 	private static final BlockState TERRACOTTA = Blocks.TERRACOTTA.defaultBlockState();
-	private static final BlockState ORANGE_TERRACOTTA = Blocks.ORANGE_TERRACOTTA.defaultBlockState();
 	private static final BlockState MOSS = Blocks.MOSS_BLOCK.defaultBlockState();
 	private static final BlockState ROOTED = Blocks.ROOTED_DIRT.defaultBlockState();
 
@@ -192,7 +191,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
 			return 6;
 		}
 		if (slope >= 1.7 || c.cover == Cover.ROCK && slope > 0.6) {
-			BlockState rock = desert ? (r > 0 ? TERRACOTTA : ORANGE_TERRACOTTA) : r > 0.45 ? ANDESITE : r < -0.5 ? TUFF : r2 > 0.6 ? CALCITE : STONE;
+			BlockState rock = desert ? (r > 0 ? TERRACOTTA : SANDSTONE) : r > 0.45 ? ANDESITE : r < -0.5 ? TUFF : r2 > 0.6 ? CALCITE : STONE;
 			out[0] = rock;
 			return 1;
 		}

@@ -1,0 +1,34 @@
+# «Мрачное средневековье» — пресет настроек для Insanity Shader v1.650 (Iris).
+# Сам шейдер не входит в мод: скачай его у автора (CurseForge, «Insanity Shader» от ElocinDev).
+# Этот файл кладётся в папку shaderpacks рядом с архивом шейдера, имя должно совпадать с именем архива + .txt
+# Только значения настроек, кода шейдера здесь нет.
+
+# Цвет: приглушённый, чуть тёплый и серый — как на старых миниатюрах
+COLOR_GRADING=true
+CG_TR=255
+CG_TG=236
+CG_TB=212
+CG_TI=1.00
+CG_TM=0.2
+SATURATION=0.80
+VIBRANCE=0.55
+EXPOSURE=-0.25
+DESATURATION_FACTOR=1.0
+
+# Воздух: плотный туман над реками и лесами, лучи солнца сквозь облака, больше облаков
+FOG_DENSITY=6.50
+LIGHT_SHAFT=true
+LIGHT_SHAFT_STRENGTH=1.25
+CLOUD_AMOUNT=9.0
+WEATHER_OPACITY=1.75
+WEATHER_PERBIOME=true
+
+# Свет: тёплое свечение факелов и очагов, глубокие тени
+BLOOM_STRENGTH=1.00
+AO_STRENGTH=1.25
+
+# Без современных «киношных» эффектов
+MOTION_BLUR=false
+DIRTY_LENS=false
+DOF=false
+RETRO_FILTER=false
