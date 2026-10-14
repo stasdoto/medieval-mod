@@ -61,6 +61,14 @@ public final class People {
 			int look = r.nextInt();
 			p.setup(look, site.culture, role, female, door, site.name, Names.of(site.culture, female, look));
 			p.snapTo(door.getX() + 0.5 + r.nextInt(3) - 1, door.getY(), door.getZ() + 0.5 + r.nextInt(3) - 1, r.nextFloat() * 360f, 0f);
+			if (role == Role.WARRIOR) {
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND,
+						new net.minecraft.world.item.ItemStack(com.stasdoto.medieval.items.Weapons.forCulture(site.culture, r)));
+				if (r.nextBoolean()) {
+					p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHAINMAIL_CHESTPLATE));
+				}
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHAINMAIL_HELMET));
+			}
 			level.addFreshEntity(p);
 		}
 	}

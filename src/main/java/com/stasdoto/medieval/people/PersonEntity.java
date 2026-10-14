@@ -37,6 +37,10 @@ public class PersonEntity extends PathfinderMob {
 	public BlockPos home = BlockPos.ZERO;
 	/** The player this warrior serves (follows and fights for), or null. */
 	public java.util.UUID lord;
+	/** A raider: the lord (player id) whose land he raids, and the settlement he is after (empty when not a raider). */
+	public String enemyOf = "";
+	public String raidOf = "";
+	public BlockPos raidTarget = BlockPos.ZERO;
 	public String settlement = "";
 	public String name = "";
 
@@ -102,7 +106,10 @@ public class PersonEntity extends PathfinderMob {
 		goalSelector.addGoal(3, new DayGoal(this));
 		targetSelector.addGoal(1, new WarGoals.DefendLord(this));
 		targetSelector.addGoal(2, new WarGoals.Retaliate(this));
+		targetSelector.addGoal(2, new WarGoals.HuntRaiders(this));
+		targetSelector.addGoal(2, new WarGoals.RaiderTargets(this));
 		targetSelector.addGoal(3, new WarGoals.HuntMonsters(this));
+		goalSelector.addGoal(2, new WarGoals.March(this));
 		goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.55));
 		goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8f));
 		goalSelector.addGoal(7, new RandomLookAroundGoal(this));
@@ -119,6 +126,10 @@ public class PersonEntity extends PathfinderMob {
 
 	@Override
 	protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+		if (!level().isClientSide() && !enemyOf.isEmpty()) {
+			player.sendSystemMessage(Component.literal("<" + name + "> Прочь с дороги!"));
+			return InteractionResult.SUCCESS;
+		}
 		if (!level().isClientSide()) {
 			String who = female() ? role().female : role().male;
 			String greet = switch (culture()) {
@@ -151,6 +162,9 @@ public class PersonEntity extends PathfinderMob {
 		if (lord != null) {
 			output.store("lord", net.minecraft.core.UUIDUtil.CODEC, lord);
 		}
+		output.putString("enemy_of", enemyOf);
+		output.putString("raid_of", raidOf);
+		output.store("raid_target", BlockPos.CODEC, raidTarget);
 	}
 
 	@Override
@@ -164,6 +178,9 @@ public class PersonEntity extends PathfinderMob {
 		settlement = input.getStringOr("settlement", "");
 		name = input.getStringOr("name", "");
 		lord = input.read("lord", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
+		enemyOf = input.getStringOr("enemy_of", "");
+		raidOf = input.getStringOr("raid_of", "");
+		raidTarget = input.read("raid_target", BlockPos.CODEC).orElse(BlockPos.ZERO);
 	}
 
 	@Override

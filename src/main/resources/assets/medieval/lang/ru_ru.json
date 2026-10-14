@@ -1,4 +1,18 @@
 {
   "generator.medieval.earth": "Земля 1:1 (1050 год)",
-  "dimension.medieval.earth": "Земля"
+  "dimension.medieval.earth": "Земля",
+  "item.medieval.carolingian_sword": "Меч каролингского типа",
+  "item.medieval.norman_sword": "Норманнский меч",
+  "item.medieval.sabre": "Степная сабля",
+  "item.medieval.bearded_axe": "Секира (бородовидный топор)",
+  "item.medieval.dane_axe": "Бродэкс (датский топор)",
+  "item.medieval.mace": "Булава",
+  "item.medieval.shestoper": "Шестопёр",
+  "item.medieval.flail": "Кистень",
+  "item.medieval.spear": "Копьё",
+  "item.medieval.sulitsa": "Сулица",
+  "item.medieval.lance": "Рыцарское копьё",
+  "item.medieval.grivna": "Серебряная гривна",
+  "itemGroup.medieval": "Средневековье",
+  "entity.medieval.person": "Житель"
 }

@@ -106,7 +106,7 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 					ctx.waitTicks(80);
 					ctx.takeScreenshot("rule_card");
 					server.runCommand("gamemode spectator @a");
-					server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a ~ ~3 ~ 160 35", MedievalCommands.EARTH.identifier()));
+					server.runCommand("execute as @p at @s run tp @s ~ ~4 ~ 160 35");
 					ctx.waitTicks(60);
 					ctx.takeScreenshot("rule_warriors");
 					int people = server.computeOnServer(sv -> {

@@ -178,4 +178,108 @@ public final class WarGoals {
 			return true;
 		}
 	}
+
+	/** Garrisons and the lord's warriors go for raiders attacking their settlement or their lord. */
+	public static final class HuntRaiders extends TargetGoal {
+		private final PersonEntity p;
+
+		public HuntRaiders(PersonEntity p) {
+			super(p, false);
+			this.p = p;
+		}
+
+		@Override
+		public boolean canUse() {
+			if (p.role() != Role.WARRIOR || !p.enemyOf.isEmpty() || p.tickCount % 10 != 0) {
+				return false;
+			}
+			PersonEntity best = null;
+			double bd = 48 * 48;
+			for (PersonEntity e : p.level().getEntitiesOfClass(PersonEntity.class, new AABB(p.blockPosition()).inflate(48))) {
+				if (e.enemyOf.isEmpty() || !e.isAlive()) {
+					continue;
+				}
+				boolean mine = e.raidOf.equals(p.settlement) || p.lord != null && e.enemyOf.equals(p.lord.toString());
+				double d = p.distanceToSqr(e);
+				if (mine && d < bd) {
+					bd = d;
+					best = e;
+				}
+			}
+			if (best == null) {
+				return false;
+			}
+			p.setTarget(best);
+			return true;
+		}
+	}
+
+	/** Raiders attack the lord, his warriors and the people of the settlement they raid. */
+	public static final class RaiderTargets extends TargetGoal {
+		private final PersonEntity p;
+
+		public RaiderTargets(PersonEntity p) {
+			super(p, false);
+			this.p = p;
+		}
+
+		@Override
+		public boolean canUse() {
+			if (p.enemyOf.isEmpty() || p.tickCount % 10 != 0) {
+				return false;
+			}
+			LivingEntity best = null;
+			double bd = 32 * 32;
+			for (Player pl : p.level().players()) {
+				if (pl.getUUID().toString().equals(p.enemyOf) && !pl.isCreative() && !pl.isSpectator()) {
+					double d = p.distanceToSqr(pl);
+					if (d < bd) {
+						bd = d;
+						best = pl;
+					}
+				}
+			}
+			for (PersonEntity e : p.level().getEntitiesOfClass(PersonEntity.class, new AABB(p.blockPosition()).inflate(32))) {
+				if (!e.isAlive() || !e.enemyOf.isEmpty()) {
+					continue;
+				}
+				boolean foe = e.lord != null && e.lord.toString().equals(p.enemyOf) || e.settlement.equals(p.raidOf);
+				double d = p.distanceToSqr(e);
+				if (foe && d < bd) {
+					bd = d;
+					best = e;
+				}
+			}
+			if (best == null) {
+				return false;
+			}
+			p.setTarget(best);
+			return true;
+		}
+	}
+
+	/** Raiders march on the settlement when nobody is in reach. */
+	public static final class March extends Goal {
+		private final PersonEntity p;
+		private int repath;
+
+		public March(PersonEntity p) {
+			this.p = p;
+			setFlags(EnumSet.of(Flag.MOVE));
+		}
+
+		@Override
+		public boolean canUse() {
+			return !p.enemyOf.isEmpty() && p.getTarget() == null && p.raidTarget != net.minecraft.core.BlockPos.ZERO
+					&& p.distanceToSqr(p.raidTarget.getX(), p.raidTarget.getY(), p.raidTarget.getZ()) > 64;
+		}
+
+		@Override
+		public void tick() {
+			if (--repath <= 0) {
+				repath = 20;
+				p.getNavigation().moveTo(p.raidTarget.getX() + 0.5, p.raidTarget.getY(), p.raidTarget.getZ() + 0.5, 1.15);
+			}
+		}
+	}
 }

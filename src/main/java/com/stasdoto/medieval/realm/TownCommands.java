@@ -482,7 +482,7 @@ public final class TownCommands {
 			int look = r.nextInt();
 			w.setup(look, c, Role.WARRIOR, false, BlockPos.containing(h.site.x, h.player.getY(), h.site.z), t.name, Names.of(c, false, look));
 			w.lord = h.player.getUUID();
-			w.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(c == Culture.NORSE || c == Culture.RUS && r.nextBoolean() ? Items.IRON_AXE : Items.IRON_SWORD));
+			w.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(com.stasdoto.medieval.items.Weapons.forCulture(c, r)));
 			if (t.get(Res.ARMOR) >= 1) {
 				t.add(Res.ARMOR, -1);
 				w.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.CHAINMAIL_CHESTPLATE));
@@ -591,15 +591,23 @@ public final class TownCommands {
 
 	// ---- the passing of days ----
 
+	private static final Map<Long, Long> RAID_DAY = new HashMap<>();
+
 	private static void tick(MinecraftServer server) {
 		Towns ts = Towns.get(server);
 		long today = Towns.today(server);
 		ServerLevel earth = MedievalCommands.earth(server);
+		Raids.watch(earth, ts);
 		for (Town t : ts.towns.values()) {
 			if (t.owner.isEmpty()) {
 				continue;
 			}
 			Economy.advance(t, today);
+			Long lastRaidCheck = RAID_DAY.put(t.id, today);
+			if (lastRaidCheck != null && lastRaidCheck < today) {
+				ServerPlayer lord = server.getPlayerList().getPlayer(java.util.UUID.fromString(t.owner));
+				Raids.daily(earth, t, lord, new java.util.Random(t.id * 7 + today));
+			}
 			ts.setDirty();
 			ServerPlayer owner = server.getPlayerList().getPlayer(java.util.UUID.fromString(t.owner));
 			// News for the lord.

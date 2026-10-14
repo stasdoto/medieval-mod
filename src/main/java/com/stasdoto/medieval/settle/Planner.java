@@ -156,7 +156,7 @@ public final class Planner {
 			}
 		}
 		java.util.Arrays.sort(hs);
-		int tol = k.big() ? 9 : k == BKind.HOMESTEAD ? 7 : 6;
+		int tol = k.big() ? 10 : k == BKind.HOMESTEAD ? 9 : 7;
 		if (hs[8] - hs[0] > tol) {
 			return null;
 		}
@@ -296,9 +296,17 @@ public final class Planner {
 						k = BKind.HOUSE_RICH;
 					}
 					double nx = -tz * side, nz = tx * side;
-					double off = rd.width / 2.0 + 3.5 + k.d / 2.0;
 					int rot = facing(-nx, -nz);
-					place(k, (int) Math.round(px + nx * off), (int) Math.round(pz + nz * off), rot);
+					// Right by the street first; then a little along it or further back.
+					outer:
+					for (double back : new double[]{3.5, 6.0}) {
+						for (double along : new double[]{0, 3, -3}) {
+							double off = rd.width / 2.0 + back + k.d / 2.0;
+							if (place(k, (int) Math.round(px + nx * off + tx * along), (int) Math.round(pz + nz * off + tz * along), rot) != null) {
+								break outer;
+							}
+						}
+					}
 				}
 				next += spacing + r.nextInt(3);
 			}
@@ -312,7 +320,7 @@ public final class Planner {
 		double dir = contour(s.x, s.z);
 		int half = Math.max(45, s.houses * 10 / 2 + 20);
 		Layout.Surface sf = surface();
-		Layout.Road main = road(join(march(s.x, s.z, dir + Math.PI, half, 0.35), march(s.x, s.z, dir, half, 0.35)), 4, sf);
+		Layout.Road main = road(join(march(s.x, s.z, dir + Math.PI, half, 0.5), march(s.x, s.z, dir, half, 0.5)), 4, sf);
 		// The middle: well, church or mosque, smithy.
 		near(BKind.WELL, s.x + (int) (Math.cos(dir + Math.PI / 2) * 8), s.z + (int) (Math.sin(dir + Math.PI / 2) * 8), 0, 6);
 		boolean church = s.christian() && (s.kind == Site.Kind.BIG_VILLAGE || s.kind == Site.Kind.VILLAGE && r.nextDouble() < 0.45);
@@ -331,9 +339,25 @@ public final class Planner {
 			lotsAlong(main, BKind.HOMESTEAD, s.houses, 0);
 		}
 		if (s.houses > 14 && homes < s.houses) {
-			Layout.Road cross = road(join(march(s.x, s.z, dir - Math.PI / 2, half / 2, 0.35), march(s.x, s.z, dir + Math.PI / 2, half / 2, 0.35)), 3, sf);
+			Layout.Road cross = road(join(march(s.x, s.z, dir - Math.PI / 2, half / 2, 0.5), march(s.x, s.z, dir + Math.PI / 2, half / 2, 0.5)), 3, sf);
 			if (cross != null) {
 				lotsAlong(cross, BKind.HOMESTEAD, s.houses, 0);
+			}
+		}
+		// Lanes branching off the streets until the village has its homes.
+		for (int tries = 0; tries < 8 && homes < s.houses && !L.roads.isEmpty(); tries++) {
+			Layout.Road from = L.roads.get(r.nextInt(L.roads.size()));
+			int n = from.pts.length / 2;
+			if (n < 4) {
+				continue;
+			}
+			int k = 1 + r.nextInt(n - 2);
+			int bx = from.pts[k * 2], bz = from.pts[k * 2 + 1];
+			double ta = Math.atan2(from.pts[k * 2 + 3] - from.pts[k * 2 - 1], from.pts[k * 2 + 2] - from.pts[k * 2 - 2]);
+			double ba = ta + (r.nextBoolean() ? Math.PI / 2 : -Math.PI / 2);
+			Layout.Road lane = road(march(bx + (int) (Math.cos(ba) * 4), bz + (int) (Math.sin(ba) * 4), ba, 50 + r.nextInt(50), 0.5), 3, sf);
+			if (lane != null) {
+				lotsAlong(lane, BKind.HOMESTEAD, s.houses, 0);
 			}
 		}
 		if (s.kind != Site.Kind.HAMLET) {
@@ -582,10 +606,39 @@ public final class Planner {
 		final int fx = bx, fz = bz;
 		streets.sort((p, q) -> Double.compare(p.dist(fx, fz), q.dist(fx, fz)));
 		int limit = s.houses;
+		double rich = s.kind.ordinal() >= Site.Kind.CITY.ordinal() ? 0.12 : 0.06;
 		for (Layout.Road rd : streets) {
-			lotsAlong(rd, BKind.HOUSE, limit, s.kind.ordinal() >= Site.Kind.CITY.ordinal() ? 0.12 : 0.06);
+			lotsAlong(rd, BKind.HOUSE, limit, rich);
 			if (homes >= limit) {
 				break;
+			}
+		}
+		// Then lanes: a grid of narrow streets between the main ones, from the citadel outwards, until the town has its homes.
+		if (homes < limit) {
+			double ga = a0;
+			double cosA = Math.cos(ga), sinA = Math.sin(ga);
+			int spacing = 2 * BKind.HOUSE.d + 10;
+			double reach = (outer != null ? outer.maxRadius() : R * 0.8);
+			java.util.List<Layout.Road> lanes = new java.util.ArrayList<>();
+			for (int i = 1; i * spacing < reach && homes < limit; i++) {
+				for (int sgn = -1; sgn <= 1; sgn += 2) {
+					// The lane runs along direction ga, offset sideways by i*spacing from the citadel.
+					int ox = bx + (int) Math.round(-sinA * sgn * i * spacing), oz = bz + (int) Math.round(cosA * sgn * i * spacing);
+					double laneHalf = Math.sqrt(Math.max(0, reach * reach - (double) i * spacing * i * spacing));
+					if (laneHalf < 30) {
+						continue;
+					}
+					Terrain.Col oc = Terrain.column(ox, oz);
+					if (!dry(oc)) {
+						continue;
+					}
+					int[] lane = join(march(ox, oz, ga + Math.PI, (int) laneHalf, 0.6), march(ox, oz, ga, (int) laneHalf, 0.6));
+					Layout.Road rd = lanes.size() < 400 ? road(lane, 3, sf) : null;
+					if (rd != null) {
+						lanes.add(rd);
+						lotsAlong(rd, BKind.HOUSE, limit, rich * 0.5);
+					}
+				}
 			}
 		}
 		gates(cit);

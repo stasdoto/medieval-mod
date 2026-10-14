@@ -1,4 +1,18 @@
 {
   "generator.medieval.earth": "Earth 1:1 (year 1050)",
-  "dimension.medieval.earth": "Earth"
+  "dimension.medieval.earth": "Earth",
+  "item.medieval.carolingian_sword": "Carolingian sword",
+  "item.medieval.norman_sword": "Norman sword",
+  "item.medieval.sabre": "Steppe sabre",
+  "item.medieval.bearded_axe": "Bearded axe",
+  "item.medieval.dane_axe": "Dane axe",
+  "item.medieval.mace": "Mace",
+  "item.medieval.shestoper": "Flanged mace",
+  "item.medieval.flail": "Flail",
+  "item.medieval.spear": "Spear",
+  "item.medieval.sulitsa": "Javelin",
+  "item.medieval.lance": "Knight's lance",
+  "item.medieval.grivna": "Silver grivna",
+  "itemGroup.medieval": "Medieval",
+  "entity.medieval.person": "Townsperson"
 }
