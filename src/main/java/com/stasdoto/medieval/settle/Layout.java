@@ -69,7 +69,7 @@ public final class Layout {
 		public final Surface surface;
 		public final int minX, minZ, maxX, maxZ;
 
-		Road(int[] pts, int width, Surface surface) {
+		public Road(int[] pts, int width, Surface surface) {
 			this.pts = pts;
 			this.width = width;
 			this.surface = surface;

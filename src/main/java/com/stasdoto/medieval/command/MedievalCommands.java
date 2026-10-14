@@ -69,10 +69,31 @@ public final class MedievalCommands {
 							return Places.ALL.size();
 						}))
 						.then(Commands.literal("where").executes(ctx -> where(ctx.getSource())))
+						.then(Commands.literal("help").executes(ctx -> help(ctx.getSource())))
 						.then(com.stasdoto.medieval.realm.TownCommands.node())
 						.then(Commands.literal("offline")
 								.then(Commands.literal("on").executes(ctx -> offline(ctx.getSource(), true)))
 								.then(Commands.literal("off").executes(ctx -> offline(ctx.getSource(), false))))));
+	}
+
+	private static int help(CommandSourceStack src) {
+		String[] lines = {
+				"═══ Stasdoto Medieval: Земля 1:1, год 1050 ═══",
+				"Мир — настоящая Земля в натуральную величину. Север — это −Z, блок (0, 0) — центр Киева.",
+				"/medieval go <город> — перенестись в город 1050 года (список: /medieval places), или /medieval go <широта> <долгота>.",
+				"/medieval where — где вы на настоящей Земле.",
+				"Поселения: сёла, хутора, замки, монастыри, кочевья и города каждого народа. ПКМ по жителю — поговорить.",
+				"/medieval town — карточка ближайшего поселения: жители, запасы, работы и кнопки.",
+				"Стать господином: купить грамоту за изумруды или взять силой, разбив гарнизон (воинов поселения).",
+				"Господин: налоги, рассылка людей по работам (пахари, лесорубы, рудокопы, кузнецы...), стройка, казна, торг.",
+				"Дружина: «Набрать воинов» — нужны оружие на складе; воины идут за вами, защищают и бьются.",
+				"Набеги: половцы на Русь, викинги на побережья, соседние графы на Западе. Будьте рядом — отобьёте сами.",
+				"Деньги: изумруды (1 = 10 серебряных), серебряная гривна. Дни считаются по солнцу: сон ускоряет хозяйство.",
+				"/medieval offline on — играть без скачивания новых карт (только уже сохранённые места)."};
+		for (String l : lines) {
+			src.sendSuccess(() -> Component.literal(l), false);
+		}
+		return 1;
 	}
 
 	private static int offline(CommandSourceStack src, boolean on) {

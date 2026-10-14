@@ -141,8 +141,24 @@ public class EarthPreview {
 					}
 				}
 			}
+			int x0 = cx - size / 2, z0 = cz - size / 2;
+			int nLinks = 0;
+			for (com.stasdoto.medieval.settle.Links.Link lk : com.stasdoto.medieval.settle.Links.near(x0, z0, x0 + size, z0 + size)) {
+				nLinks++;
+				int[] pp = lk.road().pts;
+				for (int k = 0; k + 3 < pp.length; k += 2) {
+					double len = Math.hypot(pp[k + 2] - pp[k], pp[k + 3] - pp[k + 1]);
+					for (double f = 0; f <= len; f += step * 0.5) {
+						int pi = (int) Math.round((pp[k] + (pp[k + 2] - pp[k]) * f / Math.max(1e-6, len) - cx) / step + pixels / 2.0);
+						int pj = (int) Math.round((pp[k + 1] + (pp[k + 3] - pp[k + 1]) * f / Math.max(1e-6, len) - cz) / step + pixels / 2.0);
+						if (pi >= 0 && pj >= 0 && pi < pixels && pj < pixels) {
+							img.setRGB(pi, pj, 0xC9A66B);
+						}
+					}
+				}
+			}
 			ImageIO.write(img, "png", out.resolve(name + ".png").toFile());
-			System.out.println("RESULT " + name + " settlements " + nSites + ", plots " + nLots);
+			System.out.println("RESULT " + name + " settlements " + nSites + ", plots " + nLots + ", tracks " + nLinks);
 			Terrain.Col mid = cols[(pixels / 2) * pixels + pixels / 2];
 			System.out.printf("RESULT %s: %d blocks across, ground y %.0f..%.0f, water %.1f%%, centre y %.1f (%.0f m) cover %s zone %d temp %.1f, %d ms, tiles downloaded %d failed %d%n",
 					name, size, minY, maxY, 100.0 * water / cols.length, mid.ground, mid.meters, Cover.name(mid.cover), mid.zone, mid.temp,

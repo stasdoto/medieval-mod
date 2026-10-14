@@ -147,6 +147,10 @@ public record SettlementFeature() implements Feature {
 
 		void run() {
 			int cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+			// Country tracks between the settlements.
+			for (com.stasdoto.medieval.settle.Links.Link link : com.stasdoto.medieval.settle.Links.near(x0, z0, x1, z1)) {
+				roads(java.util.List.of(link.road()));
+			}
 			List<Site> sites = Sites.near(cx, cz);
 			for (Site s : sites) {
 				Layout l = Planner.layout(s);
@@ -251,7 +255,11 @@ public record SettlementFeature() implements Feature {
 		// ---- streets ----
 
 		void roads(Layout l) {
-			for (Layout.Road r : l.roads) {
+			roads(l.roads);
+		}
+
+		void roads(java.util.List<Layout.Road> list) {
+			for (Layout.Road r : list) {
 				if (r.maxX < x0 || r.minX > x1 || r.maxZ < z0 || r.minZ > z1) {
 					continue;
 				}

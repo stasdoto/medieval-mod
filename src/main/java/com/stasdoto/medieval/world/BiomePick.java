@@ -39,8 +39,21 @@ public final class BiomePick {
 		return false;
 	}
 
+	/** Is the place inside the built-up part of a settlement (cleared of forest). */
+	public static boolean builtUp(int x, int z) {
+		for (com.stasdoto.medieval.settle.Site s : com.stasdoto.medieval.settle.Sites.near(x, z)) {
+			if (Math.hypot(x - s.x, z - s.z) < s.radius * 1.1 + 20) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** Is a place forest in 1050: today's woods, plus a share of today's fields and towns. */
 	public static boolean wooded(Terrain.Col c, int x, int z) {
+		if (builtUp(x, z)) {
+			return false;
+		}
 		if (c.cover == Cover.WOOD) {
 			return true;
 		}
@@ -98,7 +111,7 @@ public final class BiomePick {
 			}
 			return t < -2 ? Biomes.SNOWY_SLOPES : Biomes.MEADOW;
 		}
-		if (m > tree - 250 && (c.cover == Cover.WOOD || wooded(c, x, z))) {
+		if (m > tree - 250 && wooded(c, x, z)) {
 			return t < 0 ? Biomes.SNOWY_TAIGA : Biomes.GROVE;
 		}
 		switch (c.cover) {
