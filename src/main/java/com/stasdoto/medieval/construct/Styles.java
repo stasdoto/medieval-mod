@@ -163,10 +163,22 @@ public final class Styles {
 			case BYZANTINE, CAUCASUS -> Houses.stoneHouse(b, p, 1, 1, W - 2, D - 2, rich ? 3 : 2);
 			case ANDALUSI, ARAB, PERSIAN, STEPPE -> Houses.courtyardHouse(b, p, 0, 0, W - 1, D - 1, rich);
 		}
+		boolean south = c == Culture.ANDALUSI || c == Culture.ARAB || c == Culture.PERSIAN || c == Culture.BYZANTINE;
 		for (int x = 0; x < W; x++) {
 			for (int z = 0; z < D; z++) {
 				if (!b.has(x, 0, z)) {
-					b.set(x, 0, z, Blocks.COARSE_DIRT.defaultBlockState());
+					b.set(x, 0, z, south ? (b.r.nextInt(3) == 0 ? Blocks.PACKED_MUD.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState())
+							: b.r.nextInt(3) == 0 ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState());
+				}
+			}
+		}
+		// A tree in some yards of the South: a cypress-like column or a fruit tree.
+		if (south && b.r.nextInt(3) == 0) {
+			int tx = 0, tz = 0;
+			if (!b.has(tx, 1, tz)) {
+				b.set(tx, 0, tz, Blocks.GRASS_BLOCK.defaultBlockState());
+				for (int y = 1; y <= 5; y++) {
+					b.set(tx, y, tz, y <= 2 ? Bp.log(Blocks.SPRUCE_LOG, net.minecraft.core.Direction.Axis.Y) : Blocks.SPRUCE_LEAVES.defaultBlockState());
 				}
 			}
 		}

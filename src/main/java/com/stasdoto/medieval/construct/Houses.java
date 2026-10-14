@@ -431,7 +431,16 @@ final class Houses {
 	// ---------------------------------------------------------------- Islamic world: courtyard house
 
 	static void courtyardHouse(Bp b, Palette p, int x0, int z0, int x1, int z1, boolean rich) {
-		int h = rich ? 7 : 5;
+		int h = (rich ? 7 : 5) + b.r.nextInt(2) - (b.r.nextInt(4) == 0 ? 1 : 0);
+		// Whitewash, ochre plaster or bare mud brick, house by house.
+		int tone = b.r.nextInt(4);
+		if (tone == 1) {
+			p.stone = Blocks.SMOOTH_SANDSTONE.defaultBlockState();
+		} else if (tone == 2) {
+			p.stone = Blocks.PACKED_MUD.defaultBlockState();
+		} else if (tone == 3) {
+			p.stone = Blocks.TERRACOTTA.defaultBlockState();
+		}
 		b.fill(x0, -2, z0, x1, -1, z1, p.stone2);
 		b.fill(x0, 0, z0, x1, 0, z1, p.floor);
 		for (int y = 1; y <= h; y++) {
@@ -463,6 +472,23 @@ final class Houses {
 					b.set(x, h, z, p.roofFull);
 				}
 			}
+		}
+		// An upper room on the roof (a summer room) for some houses, with a lattice window.
+		if (b.r.nextInt(3) == 0 && x1 - x0 >= 8) {
+			int ux0 = x0, ux1 = x0 + 4, uz0 = z0, uz1 = z0 + 3;
+			for (int y = h + 1; y <= h + 3; y++) {
+				for (int x = ux0; x <= ux1; x++) {
+					b.set(x, y, uz0, p.stone);
+					b.set(x, y, uz1, p.stone);
+				}
+				for (int z = uz0; z <= uz1; z++) {
+					b.set(ux0, y, z, p.stone);
+					b.set(ux1, y, z, p.stone);
+				}
+			}
+			b.fill(ux0, h + 4, uz0, ux1, h + 4, uz1, p.roofFull);
+			b.set(ux0 + 2, h + 2, uz1, Bp.trapdoor(p.trapdoor, Direction.SOUTH, false, false));
+			b.door(p.door, ux1, h + 1, uz0 + 1, Direction.EAST);
 		}
 		// Parapet.
 		for (int x = x0; x <= x1; x++) {
