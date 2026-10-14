@@ -275,7 +275,7 @@ final class Holy {
 		}
 		b.set(mx, th - 2, (tz0 + tz1) / 2, Blocks.BELL.defaultBlockState());
 		b.set(mx, th - 1, (tz0 + tz1) / 2, Blocks.OAK_PLANKS.defaultBlockState());
-		b.pyramidRoof(tx0 - 1, tx1 + 1, tz0 - 1, tz1 + 1, th + 1, p.roofStairs, p.roofFull, Blocks.LIGHTNING_ROD.defaultBlockState());
+		b.pyramidRoof(tx0 - 1, tx1 + 1, tz0 - 1, tz1 + 1, th + 1, p.roofStairs, p.roofFull, Blocks.LIGHTNING_ROD.waxed().unaffected().defaultBlockState());
 		// Door through the tower into the nave.
 		b.door(Blocks.DARK_OAK_DOOR, mx, 1, tz1, Direction.SOUTH);
 		b.set(mx, 3, tz1, Bp.stairs(Blocks.STONE_BRICK_STAIRS, Direction.SOUTH, true));
@@ -407,7 +407,7 @@ final class Holy {
 		int mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
 		int top = 6 + (x1 - x0 + 2) / 2;
 		b.fill(mx - 1, top, mz - 1, mx + 1, top + 3, mz + 1, Blocks.DARK_OAK_PLANKS.defaultBlockState());
-		b.pyramidRoof(mx - 2, mx + 2, mz - 2, mz + 2, top + 4, Blocks.DARK_OAK_STAIRS, Blocks.DARK_OAK_PLANKS.defaultBlockState(), Blocks.LIGHTNING_ROD.defaultBlockState());
+		b.pyramidRoof(mx - 2, mx + 2, mz - 2, mz + 2, top + 4, Blocks.DARK_OAK_STAIRS, Blocks.DARK_OAK_PLANKS.defaultBlockState(), Blocks.LIGHTNING_ROD.waxed().unaffected().defaultBlockState());
 		b.door(Blocks.DARK_OAK_DOOR, mx, 1, z1, Direction.SOUTH);
 		b.set(mx, 1, z0 + 1, Blocks.LECTERN.defaultBlockState());
 		b.set(mx, 4, mz, Bp.lantern(true));

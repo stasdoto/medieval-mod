@@ -177,7 +177,7 @@ public final class TownCommands {
 			int k = Math.min(count, item.getDefaultMaxStackSize());
 			ItemStack st = new ItemStack(item, k);
 			if (!p.getInventory().add(st)) {
-				p.drop(st, false);
+				p.level().addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(p.level(), p.getX(), p.getY() + 0.5, p.getZ(), st));
 			}
 			count -= k;
 		}

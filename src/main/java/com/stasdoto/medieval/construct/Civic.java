@@ -161,7 +161,7 @@ final class Civic {
 			}
 		}
 		if (!stone) {
-			b.pyramidRoof(x0 - 1, x1 + 1, z0 - 1, z1 + 1, h + 2, p.roofStairs, p.roofFull, Blocks.LIGHTNING_ROD.defaultBlockState());
+			b.pyramidRoof(x0 - 1, x1 + 1, z0 - 1, z1 + 1, h + 2, p.roofStairs, p.roofFull, Blocks.LIGHTNING_ROD.waxed().unaffected().defaultBlockState());
 		} else {
 			b.set((x0 + x1) / 2, h + 1, (z0 + z1) / 2, Blocks.OAK_FENCE.defaultBlockState());
 			b.set((x0 + x1) / 2, h + 2, (z0 + z1) / 2, Blocks.OAK_FENCE.defaultBlockState());

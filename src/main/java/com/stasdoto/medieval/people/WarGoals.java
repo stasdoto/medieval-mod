@@ -93,7 +93,6 @@ public final class WarGoals {
 			}
 			if (--cooldown <= 0 && d2 <= 5.0 && p.level() instanceof ServerLevel sl) {
 				cooldown = 16;
-				p.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 				p.doHurtTarget(sl, t);
 			}
 		}

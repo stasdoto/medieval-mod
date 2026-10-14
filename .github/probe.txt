@@ -1,5 +1,5 @@
-net.minecraft.world.level.biome.BiomeResolver
-net.minecraft.world.level.chunk.ChunkGeneratorStructureState
-net.minecraft.commands.Commands
-net.minecraft.world.level.NaturalSpawner
-net.minecraft.world.level.LevelHeightAccessor
+net.minecraft.world.item.Item$Properties
+net.minecraft.world.item.ToolMaterial
+net.minecraft.world.item.AxeItem
+net.minecraft.world.item.component.Weapon
+net.minecraft.world.item.Items
