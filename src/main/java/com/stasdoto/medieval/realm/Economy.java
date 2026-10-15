@@ -23,6 +23,17 @@ public final class Economy {
 		return new String[]{"весна", "лето", "осень", "зима"}[season(day)];
 	}
 
+	/** How many finished buildings of this kind the lord has had built. */
+	static int built(Town t, String key) {
+		int n = 0;
+		for (Town.Project pr : t.projects) {
+			if (pr.progress >= pr.work && key.equals(pr.kind)) {
+				n++;
+			}
+		}
+		return n;
+	}
+
 	/** Lets {@code days} days pass. Returns lines worth telling the lord. */
 	public static void advance(Town t, long today) {
 		int guard = 0;
@@ -85,6 +96,18 @@ public final class Economy {
 			}
 			t.add(out, 0.5);
 		}
+		// What the lord's buildings give.
+		double moodBonus = 0;
+		t.add(Res.FOOD, built(t, "bakery") * p * 0.03 + built(t, "garden") * 2 + built(t, "granary") * t.get(Res.FOOD) * 0.001);
+		t.add(Res.CLOTH, built(t, "weaver") * 2.5);
+		t.add(Res.HONEY, built(t, "apiary") * (season == 1 ? 0.8 : 0.3));
+		t.add(Res.HORSES, built(t, "stable") * 0.05);
+		t.add(Res.IRON, built(t, "smithy") * 0.2 * t.ore);
+		t.treasury += built(t, "pottery") * 0.4 + built(t, "brewery") * 0.3 + built(t, "warehouse") * 0.6 + built(t, "caravanserai") * 2.5
+				+ built(t, "tavern") * 0.3 + built(t, "hall") * p * 0.004;
+		moodBonus += Math.min(6, built(t, "brewery") * 3 + built(t, "tavern") * 3) + Math.min(6, built(t, "church") * 4) + built(t, "bath") * 3
+				+ built(t, "well") * 2 + Math.min(8, (built(t, "barracks") + built(t, "tower") + built(t, "keep") + built(t, "motte")) * 3)
+				+ built(t, "garden") + built(t, "bakery") * 2;
 		// Tools wear out.
 		t.add(Res.TOOLS, -t.workers() * 0.002);
 		// Eating: everybody needs food; in winter wood for the stoves too.
@@ -92,7 +115,7 @@ public final class Economy {
 		double food = t.get(Res.FOOD);
 		boolean hungry = food < eat;
 		t.add(Res.FOOD, -eat);
-		t.add(Res.FOOD, -t.get(Res.FOOD) * 0.002); // spoilage
+		t.add(Res.FOOD, -t.get(Res.FOOD) * (built(t, "granary") + built(t, "warehouse") > 0 ? 0.001 : 0.002)); // spoilage
 		// Firewood, fences and repairs; in winter much more for the stoves.
 		t.add(Res.WOOD, -p * (season == 3 ? 0.12 : 0.04));
 		t.add(Res.CLOTH, -p * 0.003);
@@ -100,7 +123,7 @@ public final class Economy {
 		double income = p * 0.08 * t.taxPercent / 10.0 + t.jobs.get(Job.MERCHANTS) * 0.6;
 		t.treasury += income;
 		// Mood.
-		double target = 70 - t.taxPercent * 1.2;
+		double target = 70 - t.taxPercent * 1.2 + Math.min(15, moodBonus);
 		if (hungry) {
 			target -= 35;
 		}
@@ -164,7 +187,7 @@ public final class Economy {
 			for (var e : pr.needs.entrySet()) {
 				t.add(e.getKey(), -e.getValue() * builders / pr.work);
 			}
-			pr.progress = Math.min(pr.work, pr.progress + builders * share + builders * (1 - share));
+			pr.progress = Math.min(pr.work, pr.progress + builders * (1 + 0.4 * built(t, "carpenter")));
 			if (pr.progress >= pr.work) {
 				t.log("достроено: " + Buildings.title(pr.kind));
 			}
