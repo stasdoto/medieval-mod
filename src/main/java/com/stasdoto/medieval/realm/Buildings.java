@@ -22,6 +22,20 @@ public final class Buildings {
 			new Order("hall", BKind.HALL, "хоромы (палаты)", 500, 250, 150, 10, "здесь ваш двор, больше налогов"),
 			new Order("keep", BKind.KEEP, "башня-донжон", 600, 120, 400, 20, "крепче оборона"),
 			new Order("well", BKind.WELL, "колодец", 30, 5, 20, 0, "люди здоровее"),
+			new Order("pottery", BKind.POTTERY, "гончарня", 90, 40, 20, 0, "горшки и кувшины на торг"),
+			new Order("bakery", BKind.BAKERY, "пекарня", 80, 40, 25, 0, "хлеб из муки, сытнее люди"),
+			new Order("brewery", BKind.BREWERY, "пивоварня (медоварня)", 100, 50, 10, 1, "пиво и мёд, веселее люди"),
+			new Order("weaver", BKind.WEAVER, "ткацкая", 90, 45, 0, 0, "сукно и полотно"),
+			new Order("carpenter", BKind.CARPENTER, "плотницкий двор", 80, 70, 0, 2, "быстрее стройки"),
+			new Order("stable", BKind.STABLE, "конюшня", 110, 80, 10, 1, "кони для дружины и купцов"),
+			new Order("warehouse", BKind.WAREHOUSE, "торговый склад", 150, 90, 40, 2, "больше купцов, запасы целее"),
+			new Order("bath", BKind.BATHHOUSE, "баня (хаммам)", 90, 50, 30, 1, "меньше болезней"),
+			new Order("barracks", BKind.BARRACKS, "дружинная изба (казарма)", 200, 100, 60, 6, "больше воинов в гарнизоне"),
+			new Order("tower", BKind.TOWER, "сторожевая башня", 220, 40, 160, 4, "раньше видно набеги"),
+			new Order("apiary", BKind.APIARY, "пасека", 40, 20, 0, 0, "мёд и воск"),
+			new Order("garden", BKind.GARDEN, "сад", 50, 15, 10, 0, "плоды и красота"),
+			new Order("caravanserai", BKind.CARAVANSERAI, "гостиный двор (караван-сарай)", 400, 160, 200, 6, "приходят дальние караваны"),
+			new Order("motte", BKind.MOTTE, "замок на холме (мотт)", 700, 300, 100, 15, "крепость: стойко держит набеги"),
 	};
 
 	public static Order find(String key) {

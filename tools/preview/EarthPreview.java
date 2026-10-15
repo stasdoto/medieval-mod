@@ -127,9 +127,13 @@ public class EarthPreview {
 						for (com.stasdoto.medieval.settle.Layout.Lot lot : lay.lots) {
 							int rgb = switch (lot.kind) {
 								case CHURCH, CHURCH_SMALL, CATHEDRAL, MOSQUE -> 0xF5E663;
-								case HALL, KEEP -> 0xD02020;
+								case HALL, KEEP, MOTTE, LONGHOUSE, BARRACKS, TOWER -> 0xD02020;
 								case HOMESTEAD -> 0x7A4A2A;
 								case STALL, WELL -> 0x2060D0;
+								case WATERMILL, NORIA, PIER, FISHERY, BOATYARD -> 0x10C0D0;
+								case CEMETERY, GARDEN, APIARY, SHRINE -> 0x40A040;
+								case HOUSE_RICH, WAREHOUSE, CARAVANSERAI, TAVERN -> 0xE08020;
+								case SMITHY, POTTERY, TANNERY, BAKERY, BREWERY, WEAVER, CARPENTER, BLOOMERY, KILN, CHARCOAL, STABLE, BATHHOUSE, WINDMILL, SHED -> 0x6A3CA0;
 								default -> 0xA0522D;
 							};
 							for (double xx = lot.x0; xx <= lot.x1; xx += Math.max(1, step * 0.7)) {

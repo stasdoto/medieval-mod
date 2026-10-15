@@ -52,7 +52,7 @@ public final class People {
 				}
 				return door;
 			}
-			case WARRIOR -> {
+			case WARRIOR, GUARD -> {
 				if (layout != null && !layout.walls.isEmpty()) {
 					var w = layout.walls.get(r.nextInt(layout.walls.size()));
 					double a = r.nextDouble() * Math.PI * 2;
@@ -86,8 +86,19 @@ public final class People {
 			types.add(net.minecraft.world.entity.EntityTypes.HORSE);
 			types.add(net.minecraft.world.entity.EntityTypes.SHEEP);
 			types.add(net.minecraft.world.entity.EntityTypes.SHEEP);
-		} else if (kind == BKind.HALL || kind == BKind.KEEP) {
+		} else if (kind == BKind.HALL || kind == BKind.KEEP || kind == BKind.MOTTE) {
 			types.add(net.minecraft.world.entity.EntityTypes.HORSE);
+		} else if (kind == BKind.STABLE || kind == BKind.CARAVANSERAI) {
+			types.add(net.minecraft.world.entity.EntityTypes.HORSE);
+			types.add(net.minecraft.world.entity.EntityTypes.HORSE);
+			if (r.nextBoolean()) {
+				types.add(net.minecraft.world.entity.EntityTypes.DONKEY);
+			}
+		} else if (kind == BKind.APIARY) {
+			types.add(net.minecraft.world.entity.EntityTypes.BEE);
+			types.add(net.minecraft.world.entity.EntityTypes.BEE);
+		} else if (kind == BKind.CHARCOAL || kind == BKind.SHED && r.nextInt(3) == 0) {
+			types.add(net.minecraft.world.entity.EntityTypes.CHICKEN);
 		}
 		for (var t : types) {
 			var m = t.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
@@ -114,22 +125,38 @@ public final class People {
 			case YURT -> new Role[]{Role.HERDER, Role.HERDER, Role.CHILD};
 			case HOUSE -> new Role[]{Role.CRAFTSMAN, r.nextBoolean() ? Role.CRAFTSMAN : Role.MERCHANT, Role.CHILD};
 			case HOUSE_RICH -> new Role[]{Role.MERCHANT, Role.NOBLE, Role.CHILD};
-			case SMITHY -> new Role[]{Role.SMITH};
-			case TAVERN -> new Role[]{Role.MERCHANT, Role.CRAFTSMAN};
+			case SMITHY, BLOOMERY -> new Role[]{Role.SMITH, r.nextBoolean() ? Role.SMITH : Role.CHILD};
+			case TAVERN -> new Role[]{Role.INNKEEPER, Role.INNKEEPER, Role.MERCHANT};
 			case STALL -> new Role[]{Role.MERCHANT};
 			case CHURCH_SMALL, CHURCH, MOSQUE -> new Role[]{Role.PRIEST};
 			case CATHEDRAL -> new Role[]{Role.PRIEST, Role.MONK, Role.MONK};
 			case CELLS -> new Role[]{Role.MONK, Role.MONK};
 			case HALL -> new Role[]{Role.NOBLE, Role.NOBLE, Role.WARRIOR, Role.WARRIOR};
-			case KEEP -> new Role[]{Role.WARRIOR, Role.WARRIOR, Role.WARRIOR};
+			case KEEP, MOTTE -> new Role[]{Role.WARRIOR, Role.WARRIOR, Role.WARRIOR};
+			case BARRACKS -> new Role[]{Role.GUARD, Role.GUARD, Role.WARRIOR, Role.WARRIOR};
+			case TOWER -> new Role[]{Role.NOBLE, Role.GUARD};
+			case LONGHOUSE -> new Role[]{Role.WARRIOR, Role.WARRIOR, Role.PEASANT, Role.CHILD};
+			case WATERMILL, NORIA, WINDMILL -> new Role[]{Role.MILLER, Role.MILLER};
+			case POTTERY, KILN -> new Role[]{Role.POTTER, Role.POTTER};
+			case TANNERY -> new Role[]{Role.TANNER, Role.TANNER};
+			case BAKERY -> new Role[]{Role.BAKER, Role.BAKER, Role.CHILD};
+			case BREWERY -> new Role[]{Role.BREWER, Role.BREWER};
+			case WEAVER -> new Role[]{Role.WEAVER, Role.WEAVER};
+			case CARPENTER, BOATYARD -> new Role[]{Role.CARPENTER, Role.CARPENTER};
+			case FISHERY, PIER -> new Role[]{Role.FISHER, Role.FISHER};
+			case APIARY -> new Role[]{Role.BEEKEEPER};
+			case CHARCOAL -> new Role[]{Role.CHARCOALER};
+			case STABLE -> new Role[]{Role.GROOM};
+			case WAREHOUSE, CARAVANSERAI -> new Role[]{Role.MERCHANT, Role.MERCHANT, Role.GUARD};
+			case BATHHOUSE -> new Role[]{Role.CRAFTSMAN};
 			default -> new Role[0];
 		};
 		animals(level, site, kind, door, r);
 		for (int i = 0; i < who.length; i++) {
 			Role role = who[i];
 			boolean female = switch (role) {
-				case PEASANT, CRAFTSMAN, HERDER, NOBLE, MERCHANT, CHILD -> i == 1 || role == Role.CHILD && r.nextBoolean();
-				default -> false;
+				case WARRIOR, GUARD, PRIEST, MONK -> false;
+				default -> i == 1 || role == Role.CHILD && r.nextBoolean();
 			};
 			PersonEntity p = PERSON.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
 			if (p == null) {
@@ -139,7 +166,7 @@ public final class People {
 			p.setup(look, site.culture, role, female, door, site.name, Names.of(site.culture, female, look));
 			p.work = workPlace(site, layout, role, kind, door, r);
 			p.snapTo(door.getX() + 0.5 + r.nextInt(3) - 1, door.getY(), door.getZ() + 0.5 + r.nextInt(3) - 1, r.nextFloat() * 360f, 0f);
-			if (role == Role.WARRIOR) {
+			if (role == Role.WARRIOR || role == Role.GUARD) {
 				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND,
 						new net.minecraft.world.item.ItemStack(com.stasdoto.medieval.items.Weapons.forCulture(site.culture, r)));
 				if (r.nextBoolean()) {

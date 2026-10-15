@@ -20,6 +20,7 @@ import com.stasdoto.medieval.earth.Projection;
 import com.stasdoto.medieval.earth.Terrain;
 import com.stasdoto.medieval.earth.TileStore;
 import com.stasdoto.medieval.history.Places;
+import com.stasdoto.medieval.construct.Landmarks;
 import com.stasdoto.medieval.world.EarthChunkGenerator;
 
 /**
@@ -54,6 +55,9 @@ public final class MedievalCommands {
 											for (Places.Place p : Places.ALL) {
 												b.suggest(p.id());
 											}
+											for (Landmarks.Mark m : Landmarks.all()) {
+												b.suggest(m.id());
+											}
 											return b.buildFuture();
 										})
 										.executes(ctx -> go(ctx.getSource(), StringArgumentType.getString(ctx, "place")))))
@@ -68,6 +72,18 @@ public final class MedievalCommands {
 							ctx.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
 							return Places.ALL.size();
 						}))
+						.then(Commands.literal("wonders").executes(ctx -> {
+							StringBuilder sb = new StringBuilder("Чудеса света 1050 года: ");
+							for (Landmarks.Mark m : Landmarks.all()) {
+								if (m.id().matches("giza_g.*")) {
+									continue;
+								}
+								sb.append(m.name()).append(" (").append(m.id()).append("), ");
+							}
+							sb.setLength(sb.length() - 2);
+							ctx.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
+							return Landmarks.all().size();
+						}))
 						.then(Commands.literal("where").executes(ctx -> where(ctx.getSource())))
 						.then(Commands.literal("help").executes(ctx -> help(ctx.getSource())))
 						.then(com.stasdoto.medieval.realm.TownCommands.node())
@@ -81,7 +97,7 @@ public final class MedievalCommands {
 				"═══ Stasdoto Medieval: Земля 1:1, год 1050 ═══",
 				"Мир — настоящая Земля в натуральную величину. Север — это −Z, блок (0, 0) — центр Киева.",
 				"/medieval go <город> — перенестись в город 1050 года (список: /medieval places), или /medieval go <широта> <долгота>.",
-				"/medieval where — где вы на настоящей Земле.",
+				"/medieval where — где вы на настоящей Земле. /medieval wonders — чудеса света: пирамиды, Святая София, Колизей, Фарос…",
 				"Поселения: сёла, хутора, замки, монастыри, кочевья и города каждого народа. ПКМ по жителю — поговорить.",
 				"/medieval town — карточка ближайшего поселения: жители, запасы, работы и кнопки.",
 				"Стать господином: купить грамоту за изумруды или взять силой, разбив гарнизон (воинов поселения).",
@@ -121,13 +137,28 @@ public final class MedievalCommands {
 			title = String.format("%.4f, %.4f", lat, lon);
 		} else {
 			Places.Place p = Places.find(q.trim());
+			Landmarks.Mark mark = null;
 			if (p == null) {
-				src.sendFailure(Component.literal("Нет такого места. Список: /medieval places"));
-				return 0;
+				for (Landmarks.Mark m : Landmarks.all()) {
+					if (m.id().equalsIgnoreCase(q.trim())) {
+						mark = m;
+					}
+				}
+				if (mark == null) {
+					src.sendFailure(Component.literal("Нет такого места. Список: /medieval places, чудеса света: /medieval wonders"));
+					return 0;
+				}
 			}
-			lat = p.lat();
-			lon = p.lon();
-			title = p.name() + " — " + p.realm() + ", около " + p.people() + " жителей";
+			if (mark != null) {
+				// Stand a little in front of the wonder (to the south of it), to see it whole.
+				lat = Projection.lat(mark.z() + mark.halfZ() + 40);
+				lon = mark.lon();
+				title = mark.name();
+			} else {
+				lat = p.lat();
+				lon = p.lon();
+				title = p.name() + " — " + p.realm() + ", около " + p.people() + " жителей";
+			}
 		}
 		int x = (int) Math.round(Projection.x(lon)), z = (int) Math.round(Projection.z(lat));
 		MinecraftServer server = src.getServer();

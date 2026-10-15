@@ -3,33 +3,55 @@ package com.stasdoto.medieval.construct;
 import java.util.Random;
 
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.Blocks;
 
 import com.stasdoto.medieval.history.Culture;
 import com.stasdoto.medieval.settle.BKind;
+import com.stasdoto.medieval.settle.Layout;
 import com.stasdoto.medieval.settle.Site;
 
-/** Chooses and draws the building for a plot, in the way of the people living there. */
+/** Chooses and draws the building for a plot, in the way of the people who built it. */
 public final class Styles {
 	private Styles() {
 	}
 
+	public static Bp build(Layout.Lot lot, Site site) {
+		return build(lot.kind, site, lot.culture != null ? lot.culture : site.culture, lot.w, lot.d, lot.wealth, lot.seed);
+	}
+
 	public static Bp build(BKind kind, Site site, long seed) {
+		return build(kind, site, site.culture, kind.w, kind.d, kind == BKind.HOUSE_RICH ? 2 : 1, seed);
+	}
+
+	static Bp build(BKind kind, Site site, Culture c, int w, int d, int wealth, long seed) {
 		Random r = new Random(seed);
-		Culture c = site.culture;
 		Palette p = Palette.of(c, r);
-		Bp b = new Bp(kind.w, kind.d, seed);
+		Bp b = new Bp(w, d, seed);
+		try {
+			draw(b, p, r, kind, site, c, w, d, wealth);
+		} catch (RuntimeException e) {
+			if (ERRORS.incrementAndGet() <= 20) {
+				com.stasdoto.medieval.Medieval.LOGGER.error("[medieval] building {} ({}) {}x{} failed", kind, c, w, d, e);
+			}
+			return new Bp(w, d, seed);
+		}
+		return b;
+	}
+
+	private static final java.util.concurrent.atomic.AtomicInteger ERRORS = new java.util.concurrent.atomic.AtomicInteger();
+
+	private static void draw(Bp b, Palette p, Random r, BKind kind, Site site, Culture c, int w, int d, int wealth) {
+		boolean islam = c == Culture.ANDALUSI || c == Culture.ARAB || c == Culture.PERSIAN;
 		switch (kind) {
-			case HOMESTEAD -> homestead(b, p, c, r);
-			case HOUSE, HOUSE_RICH -> townHouse(b, p, c, kind == BKind.HOUSE_RICH);
-			case SMITHY -> Civic.smithy(b, p, c == Culture.LATIN || c == Culture.BYZANTINE || c == Culture.CAUCASUS || c == Culture.ARAB
-					|| c == Culture.ANDALUSI || c == Culture.PERSIAN);
+			case HOMESTEAD -> Homes.village(b, p, c);
+			case HOUSE -> Homes.town(b, p, c, Math.min(wealth, 1));
+			case HOUSE_RICH -> Homes.town(b, p, c, 2);
+			case SMITHY -> Civic.smithy(b, p, c == Culture.LATIN || c == Culture.BYZANTINE || c == Culture.CAUCASUS || islam);
 			case TAVERN -> Civic.tavern(b, p, c);
 			case GRANARY -> Civic.granary(b, p);
 			case STALL -> Civic.stall(b, r);
 			case WELL -> Civic.well(b, p);
 			case CELLS -> Civic.cells(b, p);
-			case YURT -> Houses.yurt(b, 4, 4, r.nextInt(4) == 0 ? DyeColor.BROWN : DyeColor.WHITE);
+			case YURT -> Houses.yurt(b, w / 2, d / 2, r.nextInt(4) == 0 ? DyeColor.BROWN : r.nextInt(5) == 0 ? DyeColor.LIGHT_GRAY : DyeColor.WHITE);
 			case CHURCH_SMALL -> {
 				switch (c) {
 					case RUS, BALT_FINN -> Holy.woodenChurch(b, p);
@@ -41,7 +63,7 @@ public final class Styles {
 			case CHURCH -> {
 				switch (c) {
 					case RUS, BALT_FINN -> {
-						if (site.kind.urban()) {
+						if (site.kind.urban() || r.nextInt(4) == 0) {
 							Holy.crossDomed(b, p, false, true);
 						} else {
 							Holy.woodenChurch(b, p);
@@ -68,122 +90,40 @@ public final class Styles {
 					default -> Civic.stoneHall(b, p);
 				}
 			}
-			case KEEP -> Civic.keep(b, p, c == Culture.LATIN || c == Culture.BYZANTINE || c == Culture.CAUCASUS || c == Culture.CELTIC
-					|| site.kind.ordinal() >= Site.Kind.CITY.ordinal());
-		}
-		return b;
-	}
-
-	/** A village yard: house, barn, garden, woodpile, fence and gate. */
-	private static void homestead(Bp b, Palette p, Culture c, Random r) {
-		int W = b.w, D = b.d;
-		switch (c) {
-			case RUS, BALT_FINN -> {
-				int hw = 6 + r.nextInt(2), hd = 7 + r.nextInt(2);
-				Houses.izba(b, p, 1, D - 2 - hd, hw, D - 3, 4, false);
-				Houses.barn(b, p, W - 7, 1, W - 2, 6);
-				Houses.garden(b, 1, 1, W - 9, D - hd - 5, r);
-				Houses.woodpile(b, p, W - 6, D - 6, 4);
-				Houses.fenceRing(b, p, 0, 0, W - 1, D - 1, W - 4);
-			}
-			case WEST_SLAV, MAGYAR -> {
-				Houses.izba(b, p, 1, D - 10, 7, D - 3, 3, false);
-				Houses.barn(b, p, W - 7, 1, W - 2, 6);
-				Houses.garden(b, 1, 1, W - 9, D - 13, r);
-				Houses.fenceRing(b, p, 0, 0, W - 1, D - 1, W - 4);
-			}
-			case LATIN -> {
-				Houses.timberHouse(b, p, 1, D - 10, 8, D - 4, false);
-				Houses.barn(b, p, W - 7, 1, W - 2, 7);
-				Houses.garden(b, 1, 1, W - 9, D - 14, r);
-				Houses.woodpile(b, p, W - 6, D - 5, 3);
-				Houses.fenceRing(b, p, 0, 0, W - 1, D - 1, W - 4);
-			}
-			case CELTIC -> {
-				Houses.roundhouse(b, p, 6, D - 8, 4);
-				Houses.garden(b, 1, 1, W - 3, 7, r);
-				Houses.fenceRing(b, p, 0, 0, W - 1, D - 1, W - 4);
-			}
-			case NORSE -> {
-				Houses.longhouse(b, p, 2, 2, 8, D - 3);
-				Houses.barn(b, p, W - 6, 1, W - 2, 6);
-				Houses.fenceRing(b, p, 0, 0, W - 1, D - 1, W - 3);
-			}
-			case BYZANTINE, CAUCASUS -> {
-				Houses.stoneHouse(b, p, 1, D - 10, 9, D - 3, 1);
-				Houses.garden(b, 1, 1, W - 3, D - 13, r);
-				for (int x = 0; x < W; x++) {
-					b.soft(x, 1, 0, p.stone);
-					b.soft(x, 1, D - 1, x == W - 4 ? Blocks.AIR.defaultBlockState() : p.stone);
-				}
-				for (int z = 0; z < D; z++) {
-					b.soft(0, 1, z, p.stone);
-					b.soft(W - 1, 1, z, p.stone);
-				}
-			}
-			case ANDALUSI, ARAB, PERSIAN -> {
-				Houses.courtyardHouse(b, p, 1, D - 14, W - 2, D - 2, false);
-				Houses.garden(b, 1, 1, W - 3, D - 17, r);
-				for (int x = 0; x < W; x++) {
-					b.soft(x, 1, 0, p.stone);
-					b.soft(x, 2, 0, p.stone);
-				}
-				for (int z = 0; z < D - 14; z++) {
-					b.soft(0, 1, z, p.stone);
-					b.soft(W - 1, 1, z, p.stone);
-				}
-			}
-			case STEPPE -> Houses.yurt(b, W / 2, D / 2, DyeColor.WHITE);
-		}
-		// Yard surface where nothing else is.
-		for (int x = 0; x < W; x++) {
-			for (int z = 0; z < D; z++) {
-				if (!b.has(x, 0, z)) {
-					b.set(x, 0, z, r.nextInt(5) == 0 ? Blocks.COARSE_DIRT.defaultBlockState() : Blocks.GRASS_BLOCK.defaultBlockState());
-				}
-			}
-		}
-		// A path from the gate to the door.
-		for (int z = D - 1; z >= D - 3; z--) {
-			b.set(W - 4, 0, z, Blocks.DIRT_PATH.defaultBlockState());
-		}
-	}
-
-	/** A house in a town. */
-	private static void townHouse(Bp b, Palette p, Culture c, boolean rich) {
-		int W = b.w, D = b.d;
-		switch (c) {
-			case RUS, BALT_FINN -> {
-				Houses.izba(b, p, 1, 2, W - 2, D - 2, rich ? 5 : 4, true);
-				Houses.fenceRing(b, p, 0, 0, W - 1, 1, -1);
-			}
-			case WEST_SLAV, MAGYAR -> Houses.izba(b, p, 1, 2, W - 2, D - 2, 4, true);
-			case LATIN, CELTIC -> Houses.timberHouse(b, p, 1, 2, W - 2, D - 3, rich);
-			case NORSE -> Houses.longhouse(b, p, 1, 0, W - 2, D - 2);
-			case BYZANTINE, CAUCASUS -> Houses.stoneHouse(b, p, 1, 1, W - 2, D - 2, rich ? 3 : 2);
-			case ANDALUSI, ARAB, PERSIAN, STEPPE -> Houses.courtyardHouse(b, p, 0, 0, W - 1, D - 1, rich);
-		}
-		boolean south = c == Culture.ANDALUSI || c == Culture.ARAB || c == Culture.PERSIAN || c == Culture.BYZANTINE;
-		for (int x = 0; x < W; x++) {
-			for (int z = 0; z < D; z++) {
-				if (!b.has(x, 0, z)) {
-					b.set(x, 0, z, south ? (b.r.nextInt(3) == 0 ? Blocks.PACKED_MUD.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState())
-							: b.r.nextInt(3) == 0 ? Blocks.GRASS_BLOCK.defaultBlockState() : Blocks.COARSE_DIRT.defaultBlockState());
-				}
-			}
-		}
-		// A tree in some yards of the South: a cypress-like column or a fruit tree.
-		if (south && b.r.nextInt(3) == 0) {
-			int tx = 0, tz = 0;
-			if (!b.has(tx, 1, tz)) {
-				b.set(tx, 0, tz, Blocks.GRASS_BLOCK.defaultBlockState());
-				for (int y = 1; y <= 5; y++) {
-					b.set(tx, y, tz, y <= 2 ? Bp.log(Blocks.SPRUCE_LOG, net.minecraft.core.Direction.Axis.Y) : Blocks.SPRUCE_LEAVES.defaultBlockState());
-				}
-			}
-		}
-		if (!b.has(W / 2, 1, D - 1) && c != Culture.ANDALUSI && c != Culture.ARAB && c != Culture.PERSIAN) {
-			b.set(W - 1, 1, D - 1, Bp.lantern(false));
+			case KEEP -> Forts.keep(b, p, c, switch (c) {
+				case LATIN -> r.nextInt(4) == 0 ? 1 : 0;
+				case CELTIC -> 1;
+				case RUS, WEST_SLAV, MAGYAR, BALT_FINN, NORSE, STEPPE -> site.kind.ordinal() >= Site.Kind.GREAT_CITY.ordinal() && r.nextBoolean() ? 1 : 2;
+				default -> 3;
+			});
+			case SHED -> Crafts.shed(b, p, c);
+			case POTTERY -> Crafts.pottery(b, p, c);
+			case TANNERY -> Crafts.tannery(b, p, c);
+			case BAKERY -> Crafts.bakery(b, p, c);
+			case BREWERY -> Crafts.brewery(b, p, c);
+			case WEAVER -> Crafts.weaver(b, p, c);
+			case CARPENTER -> Crafts.carpenter(b, p, c);
+			case BLOOMERY -> Crafts.bloomery(b, p, c);
+			case KILN -> Crafts.kiln(b, p, c);
+			case CHARCOAL -> Crafts.charcoal(b, p, c);
+			case APIARY -> Crafts.apiary(b, p, c);
+			case STABLE -> Crafts.stable(b, p, c);
+			case WAREHOUSE -> Crafts.warehouse(b, p, c);
+			case BATHHOUSE -> Public.bathhouse(b, p, c);
+			case CARAVANSERAI -> Public.caravanserai(b, p, c);
+			case BARRACKS -> Public.barracks(b, p, c);
+			case TOWER -> Public.tower(b, p, c);
+			case SHRINE -> Public.shrine(b, p, c);
+			case CEMETERY -> Public.cemetery(b, p, c);
+			case GARDEN -> Public.garden(b, p, c);
+			case WATERMILL -> Shore.watermill(b, p, c);
+			case NORIA -> Shore.noria(b, p, c);
+			case WINDMILL -> Shore.windmill(b, p, c);
+			case FISHERY -> Shore.fishery(b, p, c);
+			case PIER -> Shore.pier(b, p, c);
+			case BOATYARD -> Shore.boatyard(b, p, c);
+			case MOTTE -> Forts.motte(b, p, c);
+			case LONGHOUSE -> Forts.longhouse(b, p, c);
 		}
 	}
 }

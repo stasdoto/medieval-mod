@@ -187,7 +187,7 @@ public final class Skins {
 					robe(img, 0xFF1E1A1A, 0xFFB08A2E, 0xFF3A2A1A, false);
 				}
 			}
-			case WARRIOR -> warrior(img, c, cloth, trim, leather, r);
+			case WARRIOR, GUARD -> warrior(img, c, cloth, trim, leather, r);
 			case NOBLE -> {
 				int rich = DYED[r.nextInt(DYED.length)];
 				if (female) {
@@ -208,7 +208,7 @@ public final class Skins {
 			}
 		}
 		// Headwear of the people.
-		if (role != Role.WARRIOR && role != Role.MONK && role != Role.PRIEST && role != Role.NOBLE) {
+		if (role != Role.WARRIOR && role != Role.GUARD && role != Role.MONK && role != Role.PRIEST && role != Role.NOBLE) {
 			switch (c) {
 				case RUS, BALT_FINN, WEST_SLAV -> {
 					if (female && role != Role.CHILD) {
@@ -355,7 +355,13 @@ public final class Skins {
 				}
 			}
 		}
-		if (role == Role.SMITH) {
+		if (role == Role.BAKER || role == Role.MILLER) {
+			// A floury white apron.
+			for (int j = 3; j < 12; j++) {
+				f.row(img, j, 0xFFEDE8DC);
+			}
+		}
+		if (role == Role.SMITH || role == Role.TANNER || role == Role.POTTER || role == Role.CARPENTER || role == Role.CHARCOALER) {
 			// Leather apron.
 			for (int j = 2; j < 12; j++) {
 				f.row(img, j, 0xFF4A3220);

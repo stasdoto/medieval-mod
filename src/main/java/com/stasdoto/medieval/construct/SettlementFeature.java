@@ -48,6 +48,7 @@ public record SettlementFeature() implements Feature {
 
 	public static void init() {
 		Registry.register(BuiltInRegistries.FEATURE_TYPE, Medieval.id("settlements"), CODEC);
+		Planner.wonders = Landmarks::blocked;
 		BiomeModifications.addFeature(BiomeSelectors.foundInOverworld(), GenerationStep.Decoration.TOP_LAYER_MODIFICATION,
 				ResourceKey.create(Registries.PLACED_FEATURE, Medieval.id("settlements")));
 	}
@@ -75,7 +76,7 @@ public record SettlementFeature() implements Feature {
 	public static void buildNow(WorldGenLevel level, Layout l, Layout.Lot lot) {
 		Writer w = new Writer(level, lot.x0 - 4, lot.z0 - 4, lot.x1 + 4, lot.z1 + 4);
 		w.flags = Block.UPDATE_ALL;
-		Bp bp = Styles.build(lot.kind, l.site, lot.seed);
+		Bp bp = Styles.build(lot, l.site);
 		lot.built = bp;
 		w.pad(lot, bp);
 		w.place(lot, bp);
@@ -172,6 +173,8 @@ public record SettlementFeature() implements Feature {
 				lots(l);
 				walls(l);
 			}
+			// The wonders of the old world stand over everything else.
+			Landmarks.write(this::set, x0, z0, x1, z1);
 		}
 
 		// ---- fields ----
@@ -362,7 +365,7 @@ public record SettlementFeature() implements Feature {
 				}
 				Bp bp = (Bp) lot.built;
 				if (bp == null) {
-					bp = Styles.build(lot.kind, l.site, lot.seed);
+					bp = Styles.build(lot, l.site);
 					lot.built = bp;
 				}
 				pad(lot, bp);
@@ -373,7 +376,7 @@ public record SettlementFeature() implements Feature {
 
 		/** The people of a building appear in front of it, in the chunk that holds that spot. */
 		void people(Layout l, Layout.Lot lot) {
-			int W = lot.kind.w, D = lot.kind.d;
+			int W = lot.w, D = lot.d;
 			int lx = W / 2, lz = D;
 			int wx, wz;
 			switch (lot.rot) {

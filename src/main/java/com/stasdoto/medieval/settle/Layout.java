@@ -34,6 +34,12 @@ public final class Layout {
 		public final int floor;
 		public final BKind kind;
 		public final long seed;
+		/** Size of the building in its own orientation: w along the street, d away from it. */
+		public final int w, d;
+		/** The people who built it, when not the settlement's own (a foreign quarter); else null. */
+		public com.stasdoto.medieval.history.Culture culture;
+		/** 0 poor, 1 common, 2 rich. */
+		public int wealth = 1;
 		/** Cached blocks of the building (filled by the builder). */
 		public volatile Object built;
 
@@ -46,6 +52,8 @@ public final class Layout {
 			this.floor = floor;
 			this.kind = kind;
 			this.seed = seed;
+			this.w = rot % 2 == 0 ? x1 - x0 + 1 : z1 - z0 + 1;
+			this.d = rot % 2 == 0 ? z1 - z0 + 1 : x1 - x0 + 1;
 		}
 
 		public boolean touches(int ax0, int az0, int ax1, int az1, int margin) {

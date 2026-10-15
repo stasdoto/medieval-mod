@@ -172,9 +172,11 @@ public final class Sites {
 		Site.Kind kind;
 		if (cul == Culture.STEPPE) {
 			kind = Site.Kind.CAMP;
-		} else if (k < 0.07 && (cul == Culture.LATIN || cul == Culture.WEST_SLAV || cul == Culture.MAGYAR || cul == Culture.CELTIC)) {
+		} else if (k < 0.08 && (cul == Culture.LATIN || cul == Culture.WEST_SLAV || cul == Culture.MAGYAR || cul == Culture.CELTIC)
+				|| k < 0.05 && (cul == Culture.RUS || cul == Culture.BALT_FINN || cul == Culture.NORSE || cul == Culture.BYZANTINE || cul == Culture.CAUCASUS
+						|| cul == Culture.ANDALUSI || cul == Culture.ARAB || cul == Culture.PERSIAN)) {
 			kind = Site.Kind.CASTLE;
-		} else if (k < 0.11 && (cul == Culture.RUS || cul == Culture.BYZANTINE || cul == Culture.LATIN || cul == Culture.CAUCASUS)) {
+		} else if (k < 0.11 && (cul == Culture.RUS || cul == Culture.BYZANTINE || cul == Culture.LATIN || cul == Culture.CAUCASUS || cul == Culture.CELTIC)) {
 			kind = Site.Kind.MONASTERY;
 		} else if (k < 0.45) {
 			kind = Site.Kind.HAMLET;
