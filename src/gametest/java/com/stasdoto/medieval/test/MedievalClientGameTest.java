@@ -155,6 +155,7 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 				}
 				Medieval.LOGGER.info("RESULT {} done in {} s", name, (System.currentTimeMillis() - t0) / 1000);
 			}
+			ctx.runOnClient(mc -> mc.options.renderDistance().set(16));
 			String[] wonders = {"giza_khufu", "hagia_sophia", "kyiv_sofia", "kyiv_golden_gate", "colosseum", "cordoba_mezquita", "pharos", "stonehenge",
 					"theodosian_walls", "dome_of_rock", "pantheon", "hippodrome"};
 			for (String id : wonders) {
@@ -180,16 +181,23 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 					mzz = (int) Math.round(Projection.z(41.01430));
 					size = 110;
 				}
-				double camX = mxx + size * 0.8 + 25, camZ = mzz + size * 1.1 + 30;
+				if (id.equals("giza_khufu")) {
+					// The three pyramids together: from the south-east, over the Sphinx.
+					mxx = (int) Math.round(Projection.x(31.1310));
+					mzz = (int) Math.round(Projection.z(29.9765));
+					size = 200;
+				}
+				double dist = Math.max(70, Math.min(230, size * 1.25 + 30));
+				double camX = mxx + dist * 0.6, camZ = mzz + dist * 0.8;
 				Terrain.Col c = Terrain.column((int) camX, (int) camZ);
 				Terrain.Col mc = Terrain.column(mxx, mzz);
-				double camY = Math.max(c.ground, mc.ground) + size * 0.55 + 15;
+				double camY = Math.max(c.ground, mc.ground) + Math.max(30, size * 0.5);
 				double dx = mxx - camX, dz = mzz - camZ;
 				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
 				float pitch = (float) Math.toDegrees(Math.atan2(camY - mc.ground - size * 0.15, Math.hypot(dx, dz)));
 				server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a %.1f %.1f %.1f %.1f %.1f",
 						MedievalCommands.EARTH.identifier(), camX, camY, camZ, yaw, pitch));
-				ctx.waitTicks(700);
+				ctx.waitTicks(900);
 				ctx.takeScreenshot("wonder_" + id);
 				Medieval.LOGGER.info("RESULT wonder {} ({}) done in {} s", id, m.name(), (System.currentTimeMillis() - t0) / 1000);
 			}
@@ -279,10 +287,10 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 				yaw = 180f;
 			}
 		}
-		double off = Math.max(0, l.d / 2.0 - 3);
+		double off = Math.max(0, l.d / 2.0 - 3.5);
 		double x = cx + fx * off, z = cz + fz * off;
 		server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a %.1f %.1f %.1f %.1f %.1f", MedievalCommands.EARTH.identifier(), x,
-				l.floor + 2.6, z, yaw, 18f));
+				l.floor + 1.05, z, yaw, 12f));
 		ctx.waitTicks(200);
 		ctx.takeScreenshot(shot);
 		Medieval.LOGGER.info("RESULT {}: {} {}x{} at {} {} {}", shot, l.kind, l.w, l.d, (int) x, l.floor, (int) z);

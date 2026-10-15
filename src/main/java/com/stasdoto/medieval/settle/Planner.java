@@ -124,6 +124,8 @@ public final class Planner {
 	private int mx, mz;
 	private final List<District> districts = new ArrayList<>();
 	private final List<Layout.Road> townStreets = new ArrayList<>();
+	/** While growing lanes: how far to the side another street must stay (0 = no check). */
+	private int clearance;
 
 	private Planner(Site s) {
 		this.s = s;
@@ -327,6 +329,18 @@ public final class Planner {
 			}
 			if (Wonders.blocked(ix - 2, iz - 2, ix + 2, iz + 2, 4)) {
 				break;
+			}
+			if (clearance > 0 && d >= 12) {
+				// Keep room for a row of houses on each side: no running alongside another street.
+				double sx = -Math.sin(a), sz = Math.cos(a);
+				boolean close = false;
+				for (int k = 6; k <= clearance && !close; k += 3) {
+					close = streets.get((int) Math.round(nx + sx * k), (int) Math.round(nz + sz * k))
+							|| streets.get((int) Math.round(nx - sx * k), (int) Math.round(nz - sz * k));
+				}
+				if (close && !streets.get(ix, iz)) {
+					break;
+				}
 			}
 			lastH = c.meters;
 			px = nx;
@@ -1167,9 +1181,20 @@ public final class Planner {
 
 	/** The castle's road out of the gate with the village of its serfs along it. */
 	private void castleRoad(int cx, int cz, double dir, Layout.Surface sf, Layout.Wall... walls) {
-		Layout.Road rd = road(march(cx, cz, dir, 170, 0.45), 4, sf);
+		Layout.Road rd = null;
+		for (int t = 0; t < 6 && rd == null; t++) {
+			rd = road(march(cx, cz, dir + t * 1.1, 170, 0.45 + t * 0.1), 4, sf);
+		}
 		for (Layout.Wall w : walls) {
 			gates(w);
+			boolean any = false;
+			for (boolean g : w.gate) {
+				any |= g;
+			}
+			if (!any) {
+				// No way out found on the land: a gate all the same, facing the way the castle looks.
+				w.gate[(int) Math.round((dir / (2 * Math.PI) * 64 % 64 + 64)) % 64] = true;
+			}
 		}
 		if (rd != null) {
 			yardsAlong(rd, homes + s.houses);
@@ -1432,12 +1457,8 @@ public final class Planner {
 		if (up != null) {
 			townStreets.add(up);
 		}
-		// Specials along the main streets first: churches or mosques, inns, warehouses, barracks by the gates.
-		specials(sf);
-		for (Layout.Road rd : new ArrayList<>(townStreets)) {
-			lotsAlong(rd, s.houses, foreign);
-		}
-		// Lanes branch off and grow until the town has its homes.
+		// The lanes first: they branch off the streets and run into one another, until there is street front enough
+		// for all the houses; then the houses go along them, the most crowded first.
 		Bound inTown = (x, z) -> {
 			if (citadel != null && inside(citadel, x, z, -8)) {
 				return false;
@@ -1447,29 +1468,46 @@ public final class Planner {
 			}
 			return Math.hypot(x - s.x, z - s.z) < R * 1.05;
 		};
-		int budget = 60 + s.houses;
-		for (int t = 0; t < budget && homes < s.houses && !townStreets.isEmpty(); t++) {
+		double need = s.houses * 6.5, total = 0;
+		for (Layout.Road rd : townStreets) {
+			total += length(rd);
+		}
+		int budget = 200 + s.houses * 2;
+		for (int t = 0; t < budget && total < need && !townStreets.isEmpty(); t++) {
 			Layout.Road from = townStreets.get(r.nextInt(townStreets.size()));
 			double len = length(from);
-			if (len < 24) {
+			if (len < 20) {
 				continue;
 			}
-			double[] q = along(from, 8 + r.nextDouble() * (len - 16));
+			double[] q = along(from, 6 + r.nextDouble() * (len - 12));
 			if (!inTown.ok(q[0], q[1])) {
 				continue;
 			}
-			double ba = Math.atan2(q[3], q[2]) + (r.nextBoolean() ? 1 : -1) * (Math.PI / 2 + (r.nextDouble() - 0.5) * 0.7);
+			double ba = Math.atan2(q[3], q[2]) + (r.nextBoolean() ? 1 : -1) * (Math.PI / 2 + (r.nextDouble() - 0.5) * 0.6);
 			Zone z0 = zoneAt(q[0], q[1]);
 			int lw = z0 == Zone.INNER ? 3 : r.nextInt(3) == 0 ? 4 : 3;
-			int[] pts = walk(q[0] + Math.cos(ba) * (from.width / 2.0 + 2), q[1] + Math.sin(ba) * (from.width / 2.0 + 2), ba, 25 + r.nextInt(z0 == Zone.INNER ? 50 : 90),
-					0.7, 0, 0, 0, true, inTown);
+			clearance = z0 == Zone.INNER ? 15 : 21;
+			int[] pts = walk(q[0] + Math.cos(ba) * (from.width / 2.0 + 2), q[1] + Math.sin(ba) * (from.width / 2.0 + 2), ba,
+					30 + r.nextInt(z0 == Zone.INNER ? 50 : 90), 0.7, 0, 0, 0, true, inTown);
+			clearance = 0;
 			if (pts.length < 8) {
 				continue;
 			}
 			Layout.Road lane = road(pts, lw, sf);
 			if (lane != null) {
 				townStreets.add(lane);
-				lotsAlong(lane, s.houses, foreign);
+				total += length(lane);
+			}
+		}
+		// Churches or mosques, inns, warehouses, barracks along the streets; then the houses.
+		specials(sf);
+		final int fmx = mx, fmz = mz;
+		List<Layout.Road> order = new ArrayList<>(townStreets);
+		order.sort((p, q) -> Double.compare(p.dist(fmx, fmz), q.dist(fmx, fmz)));
+		for (Layout.Road rd : order) {
+			lotsAlong(rd, s.houses, foreign);
+			if (homes >= s.houses) {
+				break;
 			}
 		}
 		// Suburbs: the roads out of the gates, lined with yards, workshops, kilns, cemeteries.
