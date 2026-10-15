@@ -1,5 +1,3 @@
-net.minecraft.client.gui.GuiGraphicsExtractor
-net.minecraft.client.gui.screens.Screen
-net.minecraft.client.gui.components.events.ContainerEventHandler
-find:KeyBinding
-find:keymapping
+net.minecraft.client.Minecraft
+com.mojang.blaze3d.platform.InputConstants
+find:ClientCommand
