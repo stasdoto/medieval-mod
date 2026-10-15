@@ -148,6 +148,7 @@ public record SettlementFeature() implements Feature {
 
 		void run() {
 			int cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+			Nature.decorate(nature(), x0, z0, x1, z1);
 			// Country tracks between the settlements.
 			for (com.stasdoto.medieval.settle.Links.Link link : com.stasdoto.medieval.settle.Links.near(x0, z0, x1, z1)) {
 				roads(java.util.List.of(link.road()));
@@ -510,7 +511,9 @@ public record SettlementFeature() implements Feature {
 						continue;
 					}
 					if (k < 0.006) {
-						tree(x, t + 1, z, south, north, k);
+						Nature.tree(nature(), x, t + 1, z, south ? (k < 0.003 ? Nature.Tree.OLIVE : Nature.Tree.CYPRESS)
+								: north ? (k < 0.002 ? Nature.Tree.BIRCH : k < 0.004 ? Nature.Tree.SPRUCE : Nature.Tree.OAK)
+										: (k < 0.002 ? Nature.Tree.OAK : k < 0.004 ? Nature.Tree.POPLAR : Nature.Tree.BIRCH), x * 13 + z * 7);
 					} else if (k < 0.02) {
 						set(x, t + 1, z, (south ? Blocks.ACACIA_LEAVES : north ? Blocks.SPRUCE_LEAVES : Blocks.OAK_LEAVES).defaultBlockState()
 								.setValue(BlockStateProperties.PERSISTENT, true));
@@ -535,6 +538,27 @@ public record SettlementFeature() implements Feature {
 					}
 				}
 			}
+		}
+
+		Nature.World nature() {
+			Writer self = this;
+			return new Nature.World() {
+				public BlockState get(int x, int y, int z) {
+					return self.get(x, y, z);
+				}
+
+				public void set(int x, int y, int z, BlockState s) {
+					self.set(x, y, z, s);
+				}
+
+				public Terrain.Col col(int x, int z) {
+					return self.col(x, z);
+				}
+
+				public boolean in(int x, int z) {
+					return self.in(x, z);
+				}
+			};
 		}
 
 		void tree(int x, int y, int z, boolean south, boolean north, double k) {
