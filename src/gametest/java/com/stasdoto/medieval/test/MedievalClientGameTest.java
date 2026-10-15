@@ -201,6 +201,15 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 				ctx.takeScreenshot("wonder_" + id);
 				Medieval.LOGGER.info("RESULT wonder {} ({}) done in {} s", id, m.name(), (System.currentTimeMillis() - t0) / 1000);
 			}
+			if (scene("map")) {
+				server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a 0 200 0", MedievalCommands.EARTH.identifier()));
+				ctx.waitTicks(300);
+				ctx.takeScreenshot("minimap");
+				ctx.runOnClient(mc -> mc.gui.setScreen(new com.stasdoto.medieval.client.WorldMapScreen()));
+				ctx.waitTicks(40);
+				ctx.takeScreenshot("worldmap");
+				ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			}
 			for (Object[] s : scenes) {
 				String name = (String) s[0];
 				if (!scene(name)) {
