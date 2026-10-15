@@ -183,15 +183,15 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 				}
 				if (id.equals("giza_khufu")) {
 					// The three pyramids together: from the south-east, over the Sphinx.
-					mxx = (int) Math.round(Projection.x(31.1310));
-					mzz = (int) Math.round(Projection.z(29.9765));
-					size = 200;
+					mxx = (int) Math.round(Projection.x(31.13417));
+					mzz = (int) Math.round(Projection.z(29.97917));
+					size = 150;
 				}
 				double dist = Math.max(70, Math.min(230, size * 1.25 + 30));
 				double camX = mxx + dist * 0.6, camZ = mzz + dist * 0.8;
 				Terrain.Col c = Terrain.column((int) camX, (int) camZ);
 				Terrain.Col mc = Terrain.column(mxx, mzz);
-				double camY = Math.max(c.ground, mc.ground) + Math.max(30, size * 0.5);
+				double camY = Math.max(c.ground, mc.ground) + Math.max(30, size * 0.55);
 				double dx = mxx - camX, dz = mzz - camZ;
 				float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
 				float pitch = (float) Math.toDegrees(Math.atan2(camY - mc.ground - size * 0.15, Math.hypot(dx, dz)));

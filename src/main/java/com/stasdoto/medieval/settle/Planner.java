@@ -200,6 +200,11 @@ public final class Planner {
 		return (rot % 2 == 0) == x ? w : d;
 	}
 
+	/** Half the size of a w×d plot turned {@code rot}, measured along the unit direction (ux, uz): how far it reaches. */
+	private static double reach(int rot, int w, int d, double ux, double uz) {
+		return (ext(rot, w, d, true) * Math.abs(ux) + ext(rot, w, d, false) * Math.abs(uz)) / 2.0;
+	}
+
 	/** Tries to put a building of size w×d (in its own orientation) with its centre at (cx, cz) facing {@code rot}. */
 	private Layout.Lot place(BKind k, int cx, int cz, int rot, int w, int d, int margin) {
 		int ex = ext(rot, w, d, true), ez = ext(rot, w, d, false);
@@ -450,7 +455,7 @@ public final class Planner {
 			for (int sd = 0; sd < 2; sd++, side = -side) {
 				double nx = -q[3] * side, nz = q[2] * side;
 				int rot = facing(-nx, -nz);
-				double off = rd.width / 2.0 + 1.0 + ext(rot, w, d, Math.abs(nx) > Math.abs(nz)) / 2.0;
+				double off = rd.width / 2.0 + 1.0 + reach(rot, w, d, nx, nz);
 				Layout.Lot l = place(k, (int) Math.round(q[0] + nx * off), (int) Math.round(q[1] + nz * off), rot, w, d, margin);
 				if (l != null) {
 					return l;
@@ -646,7 +651,7 @@ public final class Planner {
 				int rot = facing(-nx, -nz);
 				int margin = dense ? 0 : zone == Zone.OUTER ? 1 : 2;
 				boolean alongX = Math.abs(nx) > Math.abs(nz);
-				double depth = ext(rot, wd[0], wd[1], alongX);
+				double depth = 2 * reach(rot, wd[0], wd[1], nx, nz);
 				Layout.Lot got = null;
 				outer:
 				for (double back : dense ? new double[]{0.6, 2.0} : new double[]{2.0, 4.0}) {
@@ -662,7 +667,7 @@ public final class Planner {
 					// The special one does not fit: an ordinary house then.
 					k = zone == Zone.SUBURB && !islam() ? BKind.HOMESTEAD : BKind.HOUSE;
 					wd = dims(k, zone);
-					depth = ext(rot, wd[0], wd[1], alongX);
+					depth = 2 * reach(rot, wd[0], wd[1], nx, nz);
 					double off = rd.width / 2.0 + (dense ? 0.6 : 2.0) + depth / 2.0;
 					got = place(k, (int) Math.round(q[0] + nx * off), (int) Math.round(q[1] + nz * off), rot, wd[0], wd[1], margin);
 				}
@@ -672,7 +677,7 @@ public final class Planner {
 					if (dist != null && dist.q == Quarter.FOREIGN && foreignOk != null) {
 						got.culture = dist.culture;
 					}
-					step = Math.max(step, ext(rot, wd[0], wd[1], !alongX));
+					step = Math.max(step, 2 * reach(rot, wd[0], wd[1], q[2], q[3]));
 					// A shed or workshop in the back yard.
 					if (dense && got.kind.home() && r.nextInt(4) == 0) {
 						double off2 = rd.width / 2.0 + 1 + depth + 4;
@@ -918,7 +923,7 @@ public final class Planner {
 				double nx = -q[3] * side, nz = q[2] * side;
 				int rot = facing(-nx, -nz);
 				boolean alongX = Math.abs(nx) > Math.abs(nz);
-				double depth = ext(rot, wd[0], wd[1], alongX);
+				double depth = 2 * reach(rot, wd[0], wd[1], nx, nz);
 				Layout.Lot got = null;
 				outer:
 				for (double back : new double[]{2.5, 5.0, 8.0}) {
@@ -932,7 +937,7 @@ public final class Planner {
 				}
 				if (got != null) {
 					got.wealth = r.nextInt(6) == 0 ? 2 : r.nextInt(3) == 0 ? 0 : 1;
-					step = Math.max(step, ext(rot, wd[0], wd[1], !alongX));
+					step = Math.max(step, 2 * reach(rot, wd[0], wd[1], q[2], q[3]));
 				}
 			}
 			next += step + 1 + r.nextInt(6);
@@ -1468,7 +1473,7 @@ public final class Planner {
 			}
 			return Math.hypot(x - s.x, z - s.z) < R * 1.05;
 		};
-		double need = s.houses * 6.5, total = 0;
+		double need = s.houses * 7.5, total = 0;
 		for (Layout.Road rd : townStreets) {
 			total += length(rd);
 		}
@@ -1508,6 +1513,31 @@ public final class Planner {
 			lotsAlong(rd, s.houses, foreign);
 			if (homes >= s.houses) {
 				break;
+			}
+		}
+		// Still room for more? Lanes into the empty land behind the houses, filled at once.
+		for (int t = 0; t < s.houses && homes < s.houses && !townStreets.isEmpty(); t++) {
+			Layout.Road from = townStreets.get(r.nextInt(townStreets.size()));
+			double len = length(from);
+			if (len < 20) {
+				continue;
+			}
+			double[] q = along(from, 6 + r.nextDouble() * (len - 12));
+			double ba = Math.atan2(q[3], q[2]) + (r.nextBoolean() ? 1 : -1) * (Math.PI / 2 + (r.nextDouble() - 0.5) * 0.6);
+			double sx = q[0] + Math.cos(ba) * (from.width / 2.0 + 2), sz = q[1] + Math.sin(ba) * (from.width / 2.0 + 2);
+			if (used.get((int) Math.round(sx), (int) Math.round(sz)) || !inTown.ok(sx, sz)) {
+				continue;
+			}
+			clearance = 15;
+			int[] pts = walk(sx, sz, ba, 30 + r.nextInt(70), 0.7, 0, 0, 0, true, inTown);
+			clearance = 0;
+			if (pts.length < 8) {
+				continue;
+			}
+			Layout.Road lane = road(pts, 3, sf);
+			if (lane != null) {
+				townStreets.add(lane);
+				lotsAlong(lane, s.houses, foreign);
 			}
 		}
 		// Suburbs: the roads out of the gates, lined with yards, workshops, kilns, cemeteries.
