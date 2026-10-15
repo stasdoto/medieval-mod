@@ -1,6 +1,2 @@
-net.minecraft.world.level.block.Blocks
-net.minecraft.world.level.block.state.properties.BlockStateProperties
-net.minecraft.world.entity.EntityTypes
-find:Shelf
-find:Copper.*Lantern
-find:HangingSign
+find:ArmorModelSet
+net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer
