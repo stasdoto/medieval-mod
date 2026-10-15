@@ -96,6 +96,20 @@ public class MedievalClientGameTest implements FabricClientGameTest {
 						MedievalCommands.EARTH.identifier(), best.x + 6.5, (double) Math.max(mid.top(), lay.centerY) + 3, best.z + 9.5, 160f, 5f));
 				ctx.waitTicks(300);
 				ctx.takeScreenshot(name + "_street");
+				// Cities: a look at the citadel (walls, palace, cathedral) from above its edge.
+				if (wantCity && !lay.walls.isEmpty()) {
+					var cit = lay.walls.get(0);
+					double rr = cit.maxRadius();
+					double cx2 = cit.cx + rr * 0.9, cz2 = cit.cz + rr * 0.9;
+					Terrain.Col c2 = Terrain.column((int) cx2, (int) cz2);
+					double y2 = c2.ground + rr * 0.45 + 20;
+					float yaw2 = (float) Math.toDegrees(Math.atan2(-(cit.cx - cx2), cit.cz - cz2));
+					float pitch2 = (float) Math.toDegrees(Math.atan2(y2 - lay.centerY, Math.hypot(cit.cx - cx2, cit.cz - cz2)));
+					server.runCommand(String.format(java.util.Locale.ROOT, "execute in %s run tp @a %.1f %.1f %.1f %.1f %.1f",
+							MedievalCommands.EARTH.identifier(), cx2, y2, cz2, yaw2, pitch2));
+					ctx.waitTicks(700);
+					ctx.takeScreenshot(name + "_citadel");
+				}
 				if ("rus_village".equals(name) && scene("rule")) {
 					// Become the lord (creative: free), look at the card, raise warriors and look at them.
 					server.runCommand("gamemode creative @a");
