@@ -1,11 +1,5 @@
-net.minecraft.client.gui.GuiGraphics
-net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
-net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement
-net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
-net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper
-net.minecraft.client.KeyMapping
-net.minecraft.client.KeyMapping$Category
+net.minecraft.client.gui.GuiGraphicsExtractor
 net.minecraft.client.gui.screens.Screen
-net.minecraft.world.level.material.MapColor
-net.minecraft.client.input.MouseButtonEvent
-net.minecraft.client.renderer.RenderPipelines
+net.minecraft.client.gui.components.events.ContainerEventHandler
+find:KeyBinding
+find:keymapping
