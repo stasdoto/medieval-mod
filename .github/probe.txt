@@ -1,2 +1,1 @@
-find:ArmorModelSet
-net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer
+net.minecraft.client.renderer.entity.ArmorModelSet
