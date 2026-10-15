@@ -135,7 +135,7 @@ public final class Nature {
 				} else {
 					if (drift > 0.32 && q < 0.22) {
 						Block[] fl = {Blocks.POPPY, Blocks.CORNFLOWER, Blocks.OXEYE_DAISY, Blocks.DANDELION, Blocks.AZURE_BLUET, Blocks.WILDFLOWERS};
-						plant = fl[(int) ((drift * 7 + x / 40 + z / 40) * 3 & 0x7fffffff) % fl.length].defaultBlockState();
+						plant = fl[Math.floorMod((int) (drift * 21) + x / 40 + z / 40, fl.length)].defaultBlockState();
 					} else if (q < 0.05) {
 						tall(w, x, t + 1, z, Blocks.TALL_GRASS);
 						continue;
