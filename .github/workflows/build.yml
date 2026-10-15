@@ -29,6 +29,7 @@ jobs:
           SC=$(echo "$MSG" | grep -o '\[test:[^]]*\]' | head -1 | sed 's/^\[test://;s/\]$//')
           echo "scenes=$SC" >> $GITHUB_OUTPUT
           if echo "$MSG" | grep -q '\[preview\]'; then echo "preview=true" >> $GITHUB_OUTPUT; fi
+          if echo "$MSG" | grep -q '\[worldmap\]'; then echo "worldmap=true" >> $GITHUB_OUTPUT; fi
           if echo "$MSG" | grep -q '\[probe\]'; then echo "probe=$(tr '\n' ' ' < .github/probe.txt)" >> $GITHUB_OUTPUT; fi
       - name: build
         id: build
@@ -44,6 +45,13 @@ jobs:
             kyiv:50.4501:30.5234:7000:1400 rus_country:51.40:31.10:9000:1200 normandy:49.30:0.80:9000:1200 \
             cordoba:37.8790:-4.7800:6000:1200 constantinople:41.0086:28.9802:9000:1400 novgorod:58.5215:31.2755:6000:1200 \
             paris:48.8530:2.3490:6000:1200 steppe:47.6:35.2:12000:1000 2>&1 | tee /tmp/out/preview-log.txt
+      - name: world map
+        if: ${{ steps.opt.outputs.worldmap == 'true' }}
+        continue-on-error: true
+        run: |
+          pip install --quiet numpy pillow scipy
+          mkdir -p /tmp/out/worldmap
+          timeout 40m python3 tools/worldmap.py /tmp/out/worldmap 2>&1 | tee /tmp/out/worldmap-log.txt
       - name: probe signatures
         if: ${{ steps.opt.outputs.probe != '' }}
         env:
@@ -145,6 +153,7 @@ jobs:
           # Separate result branches, so a probe or a plain build never overwrites in-game test results.
           BR=ci-out
           if [ "${{ steps.opt.outputs.preview }}" = "true" ]; then BR=ci-preview; fi
+          if [ "${{ steps.opt.outputs.worldmap }}" = "true" ]; then BR=ci-map; fi
           if [ -n "${{ steps.opt.outputs.probe }}" ]; then BR=ci-probe; elif [ "${{ steps.opt.outputs.gametest }}" = "true" ]; then BR=ci-test; fi
           cd /tmp/out
           git init -q -b "$BR"
