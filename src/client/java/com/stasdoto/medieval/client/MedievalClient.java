@@ -17,17 +17,16 @@ public class MedievalClient implements ClientModInitializer {
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath("medieval", "minimap"), MiniMap::draw);
 		// M opens the big map, N hides or shows the minimap.
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
-			long win = mc.getWindow().handle();
-			boolean m = org.lwjgl.glfw.GLFW.glfwGetKey(win, org.lwjgl.glfw.GLFW.GLFW_KEY_M) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-			boolean n = org.lwjgl.glfw.GLFW.glfwGetKey(win, org.lwjgl.glfw.GLFW.GLFW_KEY_N) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+			boolean m = com.mojang.blaze3d.platform.InputConstants.isKeyDown(com.mojang.blaze3d.platform.InputConstants.KEY_M);
+			boolean n = com.mojang.blaze3d.platform.InputConstants.isKeyDown(com.mojang.blaze3d.platform.InputConstants.KEY_N);
 			if (m && !mDown) {
-				if (mc.screen == null) {
-					mc.setScreen(new WorldMapScreen());
-				} else if (mc.screen instanceof WorldMapScreen) {
-					mc.setScreen(null);
+				if (mc.gui.screen() == null) {
+					mc.gui.setScreen(new WorldMapScreen());
+				} else if (mc.gui.screen() instanceof WorldMapScreen) {
+					mc.gui.setScreen(null);
 				}
 			}
-			if (n && !nDown && mc.screen == null) {
+			if (n && !nDown && mc.gui.screen() == null) {
 				MiniMap.visible = !MiniMap.visible;
 			}
 			mDown = m;

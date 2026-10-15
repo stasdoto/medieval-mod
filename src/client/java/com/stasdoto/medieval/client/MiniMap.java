@@ -57,7 +57,7 @@ public final class MiniMap {
 
 	public static void draw(GuiGraphicsExtractor g, DeltaTracker dt) {
 		Minecraft mc = Minecraft.getInstance();
-		if (!visible || mc.player == null || mc.options.hideGui) {
+		if (!visible || mc.player == null) {
 			return;
 		}
 		long now = System.currentTimeMillis();
