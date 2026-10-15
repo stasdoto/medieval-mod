@@ -22,8 +22,8 @@ public class PersonRenderer extends HumanoidMobRenderer<PersonEntity, AvatarRend
 		super(ctx, new PlayerModel(ctx.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
 		// Mail, helmets and plates worn over the clothes.
 		addLayer(new net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<>(this,
-				net.minecraft.client.model.geom.builders.ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, ctx.getModelSet(),
-						part -> new PlayerModel(part, false)),
+				net.minecraft.client.renderer.entity.ArmorModelSet.bake(ModelLayers.PLAYER_ARMOR, ctx.getModelSet(),
+						part -> new net.minecraft.client.model.HumanoidModel<AvatarRenderState>(part)),
 				ctx.getEquipmentRenderer()));
 	}
 
