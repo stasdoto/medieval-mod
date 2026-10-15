@@ -171,6 +171,7 @@ public record SettlementFeature() implements Feature {
 				roads(l);
 				squares(l);
 				lots(l);
+				decor(l);
 				walls(l);
 			}
 			// The wonders of the old world stand over everything else.
@@ -478,6 +479,81 @@ public record SettlementFeature() implements Feature {
 					s = s.rotate(rot);
 				}
 				set(x, lot.floor + ly, z, s);
+			}
+		}
+
+		// ---- life between the houses: trees, bushes, flowers, haystacks, barrels, carts, woodpiles ----
+
+		void decor(Layout l) {
+			Site s = l.site;
+			double reach = l.fieldInner + 25;
+			boolean south = s.culture == com.stasdoto.medieval.history.Culture.ARAB || s.culture == com.stasdoto.medieval.history.Culture.ANDALUSI
+					|| s.culture == com.stasdoto.medieval.history.Culture.PERSIAN || s.culture == com.stasdoto.medieval.history.Culture.BYZANTINE;
+			boolean north = s.culture == com.stasdoto.medieval.history.Culture.RUS || s.culture == com.stasdoto.medieval.history.Culture.BALT_FINN
+					|| s.culture == com.stasdoto.medieval.history.Culture.NORSE;
+			for (int x = x0 + 1; x < x1; x++) {
+				for (int z = z0 + 1; z < z1; z++) {
+					if (Math.hypot(x - s.x, z - s.z) > reach) {
+						continue;
+					}
+					double k = Noise.rand(x, z, (int) s.id + 77);
+					if (k > 0.16) {
+						continue;
+					}
+					Terrain.Col c = col(x, z);
+					if (c.waterTop != Terrain.NO_WATER) {
+						continue;
+					}
+					int t = c.top();
+					// Only on bare ground, never on streets, floors or yards that were drawn.
+					if (!get(x, t, z).is(Blocks.GRASS_BLOCK) || !get(x, t + 1, z).isAir()) {
+						continue;
+					}
+					if (k < 0.006) {
+						tree(x, t + 1, z, south, north, k);
+					} else if (k < 0.02) {
+						set(x, t + 1, z, (south ? Blocks.ACACIA_LEAVES : north ? Blocks.SPRUCE_LEAVES : Blocks.OAK_LEAVES).defaultBlockState()
+								.setValue(BlockStateProperties.PERSISTENT, true));
+					} else if (k < 0.024) {
+						set(x, t + 1, z, Blocks.HAY_BLOCK.defaultBlockState());
+					} else if (k < 0.027) {
+						set(x, t + 1, z, Blocks.BARREL.defaultBlockState());
+					} else if (k < 0.029) {
+						set(x, t + 1, z, Bp.log(Blocks.OAK_LOG, (x & 1) == 0 ? Direction.Axis.X : Direction.Axis.Z));
+					} else if (k < 0.031) {
+						set(x, t + 1, z, Blocks.COMPOSTER.defaultBlockState());
+					} else if (k < 0.033 && !south) {
+						set(x, t + 1, z, Blocks.OAK_FENCE.defaultBlockState());
+						set(x, t + 2, z, Blocks.HAY_BLOCK.defaultBlockState());
+						set(x, t + 3, z, Blocks.CARVED_PUMPKIN.defaultBlockState());
+					} else if (k < 0.07) {
+						BlockState[] fl = {Blocks.POPPY.defaultBlockState(), Blocks.CORNFLOWER.defaultBlockState(), Blocks.DANDELION.defaultBlockState(),
+								Blocks.OXEYE_DAISY.defaultBlockState(), Blocks.AZURE_BLUET.defaultBlockState(), Blocks.BUSH.defaultBlockState()};
+						set(x, t + 1, z, fl[(int) (k * 1000) % fl.length]);
+					} else {
+						set(x, t + 1, z, Blocks.SHORT_GRASS.defaultBlockState());
+					}
+				}
+			}
+		}
+
+		void tree(int x, int y, int z, boolean south, boolean north, double k) {
+			Block log = south ? Blocks.ACACIA_LOG : north ? (k < 0.003 ? Blocks.BIRCH_LOG : Blocks.SPRUCE_LOG) : (k < 0.003 ? Blocks.BIRCH_LOG : Blocks.OAK_LOG);
+			Block leaf = south ? Blocks.ACACIA_LEAVES : log == Blocks.BIRCH_LOG ? Blocks.BIRCH_LEAVES : north ? Blocks.SPRUCE_LEAVES : Blocks.OAK_LEAVES;
+			BlockState lv = leaf.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true);
+			int h = 4 + (int) (k * 1000) % 3;
+			for (int dy = -2; dy <= 1; dy++) {
+				int r = dy == 1 ? 1 : 2;
+				for (int dx = -r; dx <= r; dx++) {
+					for (int dz = -r; dz <= r; dz++) {
+						if (Math.abs(dx) + Math.abs(dz) <= r + 1 && in(x + dx, z + dz) && get(x + dx, y + h + dy, z + dz).isAir()) {
+							set(x + dx, y + h + dy, z + dz, lv);
+						}
+					}
+				}
+			}
+			for (int i = 0; i < h; i++) {
+				set(x, y + i, z, log.defaultBlockState());
 			}
 		}
 

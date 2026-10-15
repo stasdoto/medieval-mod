@@ -169,10 +169,10 @@ public final class People {
 			if (role == Role.WARRIOR || role == Role.GUARD) {
 				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND,
 						new net.minecraft.world.item.ItemStack(com.stasdoto.medieval.items.Weapons.forCulture(site.culture, r)));
-				if (r.nextBoolean()) {
-					p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHAINMAIL_CHESTPLATE));
-				}
-				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.CHAINMAIL_HELMET));
+				Gear.arm(p, site.culture, kind == BKind.HALL || kind == BKind.KEEP || kind == BKind.MOTTE, r);
+			}
+			if (role == Role.WARRIOR && (kind == BKind.KEEP || kind == BKind.MOTTE || kind == BKind.HALL) && r.nextInt(3) == 0) {
+				Gear.mount(level, p, r);
 			}
 			level.addFreshEntity(p);
 		}
